@@ -17,22 +17,84 @@
   </properties>
 
   <dependencies>
-    <!-- https://mvnrepository.com/artifact/com.h2database/h2 -->
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-all</artifactId>
+      <version>1.3</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb.flyway-test-extensions</groupId>
+      <artifactId>flyway-spring5-test</artifactId>
+      <version>7.0.0</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <version>1.4.200</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>5.7.1</version>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <version>7.6.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
 
   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>cloud.caravana.anonymouse.App</mainClass>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <jdbc.driver>org.h2.Driver</jdbc.driver>
+            <jdbc.url>jdbc:h2:nio:${project.build.directory}/db/flywaytest.db</jdbc.url>
+            <jdbc.username>h2_test</jdbc.username>
+            <jdbc.password>h2_test</jdbc.password>
+            <flyway.locations>sampleschema</flyway.locations>
+            <flyway.driver>org.h2.Driver</flyway.driver>
+            <flyway.url>jdbc:h2:nio:${project.build.directory}/db/flywaytest.db</flyway.url>
+            <flyway.user>h2_test</flyway.user>
+            <flyway.password>h2_test</flyway.password>
+          </systemPropertyVariables>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
+          <threadCount>1</threadCount>
+          <runOrder>alphabetical</runOrder>
+          <perCoreThreadCount>false</perCoreThreadCount>
+          <redirectTestOutputToFile>false</redirectTestOutputToFile>
+        </configuration>
+        <goals>
+          <goal>test</goal>
+        </goals>
+        <executions>
+        </executions>
+      </plugin>
+    </plugins>
     <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
       <plugins>
         <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
