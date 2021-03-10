@@ -2,29 +2,20 @@ package cloud.caravana.anonymouse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.MigrationInfo;
-import org.flywaydb.core.api.MigrationInfoService;
 import org.flywaydb.test.FlywayTestExecutionListener;
 import org.flywaydb.test.annotation.FlywayTest;
-import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
-import javax.sql.*;
+// essentials
+// database
 import java.sql.*;
-import java.util.*;
-
+// testing libs
 import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(locations = {"/context/simple_applicationContext.xml"})
@@ -33,17 +24,14 @@ import static org.hamcrest.Matchers.*;
 @FlywayTest
 public class AnonymouseTest extends BaseDBHelper {
     private final Log logger = LogFactory.getLog(getClass());
+    Anonymouse anonymizer = new Anonymouse();
+    Classifier cx = new Classifier();
 
-    /**
-     * Made a clean init migrate usage before execution of test method.
-     * SQL statements will be loaded from the default location.
-     */
     @Test
     @FlywayTest(locationsForMigrate = {"anonName"})
-    public void dummyTestMethodLoad() throws Exception {
-        Anonymouse anon = new Anonymouse();
+    public void testAnonymizeNames() throws Exception {
         assertTrue(hasNamedCustomer());
-        anon.run(ds);
+        anonymizer.run(datasource);
         assertFalse(hasNamedCustomer());
     }
 
@@ -54,18 +42,13 @@ public class AnonymouseTest extends BaseDBHelper {
             try (ResultSet rs = stmt.executeQuery(query)) {
                 while(rs.next()){
                     String name = rs.getString("cus_name");
-                    System.out.println("---- "+ name);
-                    if (! name.startsWith(Anonymouse.ANON_PREFIX)){
+                    if (! cx.isAnonymized(name)){
                         return true;
                     }    
                 }
             }
         }
-
         return false;
     }
-
-
-
 }
 

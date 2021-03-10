@@ -26,7 +26,7 @@ public abstract class BaseDBHelper {
     protected ApplicationContext context;
 
     protected Connection con;
-    protected DataSource ds;
+    protected DataSource datasource;
     
     /**
      * Open a connection to database for test execution statements
@@ -34,8 +34,8 @@ public abstract class BaseDBHelper {
      */
     @Before
     public void setup() throws Exception {
-        ds = (DataSource) context.getBean("dataSourceRef");
-        con = ds.getConnection();
+        datasource = (DataSource) context.getBean("dataSourceRef");
+        con = datasource.getConnection();
     }
 
     /**
