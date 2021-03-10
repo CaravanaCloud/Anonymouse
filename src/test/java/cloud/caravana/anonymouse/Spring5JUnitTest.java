@@ -74,7 +74,7 @@ public class Spring5JUnitTest extends BaseDBHelper {
      * SQL statements will be loaded from the default location.
      */
     @Test
-    @FlywayTest
+    @FlywayTest(locationsForMigrate = {"caseA"})
     public void dummyTestMethodLoad() throws Exception {
         int res = countCustomer();
 
@@ -86,33 +86,10 @@ public class Spring5JUnitTest extends BaseDBHelper {
      * load SQL statements from two directories.
      */
     @Test
-    @FlywayTest(locationsForMigrate = {"caseA"})
+    @FlywayTest( locationsForMigrate = {"caseB"} )
     public void loadMultibleSQLs() throws Exception {
         int res = countCustomer();
-
         assertThat("Count of customer", res, is(2));
-    }
-
-    /**
-     * Made a clean init migrate usage before execution of test method.
-     * SQL statements will be loaded from the default location.
-     */
-    @Test
-    @FlywayTest(invokeBaselineDB = true)
-    public void testMethodLoadWithBaseline() throws Exception {
-        int res = countCustomer();
-        assertThat("Count of customer", res, is(0));
     }
 }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    

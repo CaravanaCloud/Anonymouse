@@ -26,16 +26,15 @@ public abstract class BaseDBHelper {
     protected ApplicationContext context;
 
     protected Connection con;
-
+    protected DataSource ds;
+    
     /**
      * Open a connection to database for test execution statements
      * @throws Exception
      */
     @Before
     public void setup() throws Exception {
-
-        DataSource ds = (DataSource) context.getBean("dataSourceRef");
-
+        ds = (DataSource) context.getBean("dataSourceRef");
         con = ds.getConnection();
     }
 
