@@ -1,18 +1,30 @@
 package cloud.caravana.anonymouse;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 public class Classifier {
-    public static String ANON_PREFIX = "Anonymoused ";
+    private Set<String> piiCols;
 
-    //TODO: Read from cfg file?
-    public boolean isInteresting(String tableName, String columnName){
-        return "CUSTOMER".equalsIgnoreCase(tableName) && "cus_name".equalsIgnoreCase(columnName);
+    public Classifier(String piiCols) {
+        String[] piiColsArr = piiCols.toUpperCase().split("\\,");
+        this.piiCols = new HashSet<>(Arrays.asList(piiColsArr));
     }
 
-    public boolean isInteresting(String tableName){
-        return "CUSTOMER".equalsIgnoreCase(tableName);
+    public boolean isInteresting(String tableName, String columnName, String columnValue){
+        if (isCleared(columnValue))
+            return false;
+        if (piiCols.contains(tableName.toUpperCase()))
+            return true;
+        String piiCol = (tableName + "." + columnName).toUpperCase();
+        if (piiCols.contains(piiCol))
+            return true;
+        return false;
     }
 
-    public boolean isAnonymized(String name) {
-        return name.startsWith(ANON_PREFIX);
+    private boolean isCleared(String columnValue) {
+        return columnValue == null || columnValue.startsWith(Anonymouse.ANON_PREFIX);
     }
+
 }

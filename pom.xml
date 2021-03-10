@@ -61,7 +61,7 @@
           </execution>
         </executions>
         <configuration>
-          <mainClass>cloud.caravana.anonymouse.App</mainClass>
+          <mainClass>cloud.caravana.anonymouse.Anonymouse</mainClass>
         </configuration>
       </plugin>
 

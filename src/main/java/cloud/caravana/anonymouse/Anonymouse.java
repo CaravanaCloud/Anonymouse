@@ -7,50 +7,49 @@ import java.util.*;
 import static java.sql.ResultSet.*;
 
 public class Anonymouse {
-    private static Logger log = Logger.getLogger("anonymouse");
+    public static String ANON_PREFIX = "|#| ";
 
-    Classifier cx = new Classifier();
-    Generator gn = new Generator();
+    private static Logger log = Logger.getLogger("anonymouse");
+    private DataSource ds;
+    private Classifier cx;
+
+    public Anonymouse(DataSource ds, String piiCols){
+        this.ds = ds;
+        this.cx = new Classifier(piiCols);
+    }
 
     public void runTable(Connection conn, DatabaseMetaData dbmd, String tableName) throws Exception{
-        ResultSet columns = dbmd.getColumns(null,null, tableName, null);
-        List<String> xcolumns = new ArrayList<>();
-        while(columns.next())
-        {
-            String columnName = columns.getString("COLUMN_NAME");
-            String datatype = columns.getString("DATA_TYPE");
-            String columnsize = columns.getString("COLUMN_SIZE");
-            String decimaldigits = columns.getString("DECIMAL_DIGITS");
-            String isNullable = columns.getString("IS_NULLABLE");
-            String is_autoIncrment = columns.getString("IS_AUTOINCREMENT");
-            Boolean interesting = cx.isInteresting(tableName, columnName);
-
-            StringBuffer buff = new StringBuffer();
-            buff.append("INTERESTING="+interesting);
-            buff.append(" COLUMN_NAME="+columnName);
-            buff.append(" DATA_TYPE="+datatype);
-            buff.append(" COLUMN_SIZE="+columnsize);
-            buff.append(" DECIMAL_DIGITS="+decimaldigits);
-            buff.append(" IS_NULLABLE="+isNullable);
-            buff.append(" IS_AUTOINCREMENT="+is_autoIncrment);
-            log.info(buff.toString());
-
-            if(interesting){
-                xcolumns.add(columnName);
-            }
-        }
-
         String sql = "SELECT * FROM " + tableName;
         Statement statement = conn.createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_UPDATABLE);
         ResultSet rows = statement.executeQuery(sql);
+        ResultSetMetaData rowsMD = rows.getMetaData();
+        int colCnt = rowsMD.getColumnCount();
+        int rowCnt = 0;
         while(rows.next()){
-            for(String columnName: xcolumns){
-                String newValue = gn.anonName();
-                log.finer("Anonymoused ["+tableName+"].["+columnName+"] := ["+newValue+"]");
-                rows.updateString(columnName, newValue);
+            rowCnt++;
+            for(int col=1; col <= colCnt; col++){
+                int columnType = rowsMD.getColumnType(col);
+                if (isStringType(columnType)){
+                    updateString(tableName, rowsMD, rows, rowCnt, col);
+                }
             }
             rows.updateRow();
         }   
+    }
+
+    private void updateString(String tableName, ResultSetMetaData rowsMD, ResultSet rows, int row, int col)
+        throws SQLException {
+        String columnName = rowsMD.getColumnName(col);
+        String columnValue = rows.getString(col);
+        if ( cx.isInteresting(tableName, columnName, columnValue) ){
+            String newValue = ANON_PREFIX + " " + columnName + " " + row;
+            log.finer("Anonymoused ["+ tableName +"].["+ columnName +"] := ["+newValue+"]");
+            rows.updateString(columnName, newValue);
+        }
+    }
+
+    public static boolean isStringType(int columnType){
+        return columnType == Types.VARCHAR;
     }
 
     public void runTables(Connection conn) throws Exception{
@@ -67,10 +66,8 @@ public class Anonymouse {
             String remarks = rs.getString("REMARKS"); 
             String selfRefColName = rs.getString("SELF_REFERENCING_COL_NAME");
             String refGen = rs.getString("REF_GENERATION");
-            Boolean isInteresting = cx.isInteresting(tableName);
 
             StringBuffer buff = new StringBuffer();
-            buff.append("INTERESTING="+isInteresting);
             buff.append(" TABLE_CAT="+tableCat);
             buff.append(" TABLE_SCHEM="+tableSchem);
             buff.append(" TABLE_NAME="+tableName);
@@ -83,17 +80,29 @@ public class Anonymouse {
             buff.append(" REF_GENERATION="+refGen);
             log.info(buff.toString());
 
-            if (isInteresting){
+            boolean skip = "INFORMATION_SCHEMA".equalsIgnoreCase(tableSchem);
+            skip |= "FLYWAY_SCHEMA_HISTORY".equalsIgnoreCase(tableName);
+            if (! skip)
                 runTable(conn, dbmd, tableName);
-            }
         }    
     }
 
-    public void run(DataSource ds) throws Exception{
-        try(Connection conn = ds.getConnection()){
+    public void run() throws Exception{
+        if (ds == null) {
+            log.warning("Can't connect without datasource");
+        }else try (Connection conn = ds.getConnection()){
             runTables(conn);
         } finally{
             log.fine("Database anonymized");
         }
+    }
+
+    public boolean isAnonymized(String tableName, String colName, String colValue) {
+        return ! cx.isInteresting(tableName,colName,colValue);
+    }
+
+    public static void main( String[] args ) throws Exception {
+        //TODO
+        new Anonymouse(null, null).run();
     }
 }
