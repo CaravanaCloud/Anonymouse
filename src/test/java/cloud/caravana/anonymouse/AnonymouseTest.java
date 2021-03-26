@@ -13,7 +13,6 @@ import javax.sql.DataSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.flywaydb.core.Flyway;
-import org.flywaydb.test.annotation.FlywayTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,6 +20,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -33,7 +33,6 @@ import static java.lang.String.*;
 public class AnonymouseTest {
 
     private final Log logger = LogFactory.getLog(getClass());
-    Anonymouse anonymouse;
 
     @Autowired
     @Qualifier("test")
@@ -45,10 +44,8 @@ public class AnonymouseTest {
     @Autowired
     private JdbcTemplate jdbc;
 
-    @Before
-    public void beforeTest() {
-        anonymouse = new Anonymouse(datasource, "customer.cus_name");
-    }
+    @Autowired
+    private Anonymouse anonymouse;
 
     @Test
     public void testConnectivity() throws Exception {
@@ -70,12 +67,13 @@ public class AnonymouseTest {
         //given
         db.migrate("db/migration", "anonName");
         //when
+        anonymouse.setPIIColumns("customer.cus_name");
         anonymouse.run();
         //then
         assertFalse(hasNamedCustomer());
     }
 
-    public Boolean hasNamedCustomer() {
+    private Boolean hasNamedCustomer() {
         var col = "cus_name";
         var tbl = "CUSTOMER";
         var sql = format("SELECT %s FROM %s",col,tbl);

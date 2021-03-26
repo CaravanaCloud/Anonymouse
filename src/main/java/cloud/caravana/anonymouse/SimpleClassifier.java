@@ -9,13 +9,6 @@ import org.springframework.stereotype.Component;
 public class SimpleClassifier extends PIIClassifier {
     private Set<String> piiCols;
 
-    public SimpleClassifier(){}
-
-    public SimpleClassifier(String piiCols) {
-        String[] piiColsArr = piiCols.toUpperCase().split("\\,");
-        this.piiCols = new HashSet<>(Arrays.asList(piiColsArr));
-    }
-
     public PIIClass classify(String tableName, String columnName, String columnValue){
         if (isCleared(columnValue))
             return PIIClass.Safe;
@@ -27,4 +20,8 @@ public class SimpleClassifier extends PIIClassifier {
         return PIIClass.Safe;
     }
 
+    public void setPIIColumns(String piiCols) {
+        String[] piiColsArr = piiCols.toUpperCase().split("\\,");
+        this.piiCols = new HashSet<>(Arrays.asList(piiColsArr));
+    }
 }

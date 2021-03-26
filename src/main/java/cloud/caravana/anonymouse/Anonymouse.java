@@ -1,120 +1,126 @@
 package cloud.caravana.anonymouse;
 
+import static java.sql.ResultSet.CONCUR_UPDATABLE;
+import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.logging.Logger;
-import javax.sql.*;
-import java.sql.*;
+import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import static java.sql.ResultSet.*;
+import static java.lang.String.*;
 
 @Component
 public class Anonymouse {
-    public static String ANON_PREFIX = "|#| ";
 
-    private static Logger log = Logger.getLogger("anonymouse");
+    @Autowired
+    private Logger log;
 
-    @Autowired(required = false)
+    @Autowired
     private DataSource ds;
 
     @Autowired
     private SimpleClassifier cx;
 
-    public Anonymouse(){}
-
-    public Anonymouse(DataSource ds, String piiCols){
-        this.ds = ds;
-        this.cx = new SimpleClassifier(piiCols);
-    }
-
-    public void runTable(Connection conn, DatabaseMetaData dbmd, String tableName) throws Exception{
-        String sql = "SELECT * FROM " + tableName;
-        Statement statement = conn.createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_UPDATABLE);
-        ResultSet rows = statement.executeQuery(sql);
-        ResultSetMetaData rowsMD = rows.getMetaData();
-        int colCnt = rowsMD.getColumnCount();
-        int rowCnt = 0;
-        while(rows.next()){
-            rowCnt++;
-            for(int col=1; col <= colCnt; col++){
-                int columnType = rowsMD.getColumnType(col);
-                if (isStringType(columnType)){
-                    updateString(tableName, rowsMD, rows, rowCnt, col);
+    public void runTable(String tableName) {
+        try (Connection conn = ds.getConnection()) {
+            var sql = "SELECT * FROM " + tableName;
+            var statement = conn.createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_UPDATABLE);
+            var rows = statement.executeQuery(sql);
+            var rowsMD = rows.getMetaData();
+            var colCnt = rowsMD.getColumnCount();
+            var rowCnt = 0;
+            while (rows.next()) {
+                rowCnt++;
+                for (var col = 1; col <= colCnt; col++) {
+                    int columnType = rowsMD.getColumnType(col);
+                    if (isStringType(columnType)) {
+                        updateString(tableName, rowsMD, rows, rowCnt, col);
+                    }
                 }
+                rows.updateRow();
             }
-            rows.updateRow();
-        }   
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            log.exiting("Anonymouse", "runTable");
+        }
     }
 
-    private void updateString(String tableName, ResultSetMetaData rowsMD, ResultSet rows, int row, int col)
-        throws SQLException {
+    private void updateString(String tableName, ResultSetMetaData rowsMD,
+                              ResultSet rows, int row, int col) throws SQLException {
         String columnName = rowsMD.getColumnName(col);
         String columnValue = rows.getString(col);
-        if ( ! cx.isPIISafe(tableName, columnName, columnValue) ){
-            String newValue = ANON_PREFIX + " " + columnName + " " + row;
-            log.finer("Anonymoused ["+ tableName +"].["+ columnName +"] := ["+newValue+"]");
+        PIIClass piiclass = cx.classify(tableName, columnName, columnValue);
+        if (!PIIClass.Safe.equals(piiclass)) {
+            String newValue = cx.generateString(row, columnName);
+            log.finer("Anonymoused [" + tableName + "].[" + columnName + "] := [" + newValue + "]");
             rows.updateString(columnName, newValue);
         }
     }
 
-    public static boolean isStringType(int columnType){
+    public static boolean isStringType(int columnType) {
         return columnType == Types.VARCHAR;
     }
 
-    public void runTables(Connection conn) throws Exception{
-        DatabaseMetaData dbmd = conn.getMetaData();
-        ResultSet rs = dbmd.getTables(null, null, null, null); 
-        while(rs.next()) { 
-            String tableCat = rs.getString("TABLE_CAT"); 
-            String tableSchem = rs.getString("TABLE_SCHEM"); 
-            String tableName = rs.getString("TABLE_NAME"); 
-            String tableType = rs.getString("TABLE_TYPE"); 
-            String typeCat = rs.getString("TYPE_CAT"); 
-            String typeSchem = rs.getString("TYPE_SCHEM"); 
-            String typeName = rs.getString("TYPE_NAME"); 
-            String remarks = rs.getString("REMARKS"); 
-            String selfRefColName = rs.getString("SELF_REFERENCING_COL_NAME");
-            String refGen = rs.getString("REF_GENERATION");
-
-            StringBuffer buff = new StringBuffer();
-            buff.append(" TABLE_CAT="+tableCat);
-            buff.append(" TABLE_SCHEM="+tableSchem);
-            buff.append(" TABLE_NAME="+tableName);
-            buff.append(" TABLE_TYPE="+tableType);
-            buff.append(" TYPE_CAT="+typeCat);
-            buff.append(" TYPE_SCHEM="+typeSchem);
-            buff.append(" TYPE_NAME="+typeName);
-            buff.append(" REMARKS="+remarks);
-            buff.append(" SELF_REFERENCING_COL_NAME="+selfRefColName);
-            buff.append(" REF_GENERATION="+refGen);
-            log.info(buff.toString());
-
-            boolean skip = "INFORMATION_SCHEMA".equalsIgnoreCase(tableSchem);
-            skip |= "FLYWAY_SCHEMA_HISTORY".equalsIgnoreCase(tableName);
-            if (! skip)
-                runTable(conn, dbmd, tableName);
-        }    
+    public void runTables() throws Exception {
+        try (Connection conn = ds.getConnection()) {
+            DatabaseMetaData dbmd = conn.getMetaData();
+            ResultSet rs = dbmd.getTables(null, null, null, null);
+            while (rs.next()) {
+                if (!isSkippedTable(rs)) {
+                    String tableName = rs.getString("TABLE_NAME");
+                    runTable(tableName);
+                }
+            }
+        } finally {
+            log.exiting("Anonymouse", "runTables");
+        }
     }
 
-    public void run(){
-        if (ds == null) {
-            log.warning("Can't connect without datasource");
-        }else try (Connection conn = ds.getConnection()){
-            runTables(conn);
-        }catch(Exception e){
+    private boolean isSkippedTable(ResultSet rs) throws SQLException {
+        var table = new Table(
+            rs.getString("TABLE_CAT"),
+            rs.getString("TABLE_SCHEM"),
+            rs.getString("TABLE_NAME"),
+            rs.getString("TABLE_TYPE"),
+            rs.getString("TYPE_CAT"),
+            rs.getString("TYPE_SCHEM"),
+            rs.getString("TYPE_NAME"),
+            rs.getString("REMARKS"),
+            rs.getString("SELF_REFERENCING_COL_NAME"),
+            rs.getString("REF_GENERATION")
+        );
+
+        boolean skip = "INFORMATION_SCHEMA".equalsIgnoreCase(table.tableSchem());
+        skip |= "FLYWAY_SCHEMA_HISTORY".equalsIgnoreCase(table.tableName());
+        log.info(format("Skip [%s] Table [%s]",skip,table));
+        return skip;
+    }
+
+    public void run() {
+        try (Connection conn = ds.getConnection()) {
+            runTables();
+        } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
-        } finally{
+        } finally {
             log.fine("Database anonymized");
         }
     }
 
     public boolean isPIISafe(String tableName, String colName, String colValue) {
-        return cx.isPIISafe(tableName,colName,colValue);
+        return cx.isPIISafe(tableName, colName, colValue);
     }
 
-    public static void main( String[] args ) throws Exception {
-        //TODO
-        new Anonymouse(null, null).run();
+    public void setPIIColumns(String piiColumns) {
+        cx.setPIIColumns(piiColumns);
     }
 }
