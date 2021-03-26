@@ -3,7 +3,6 @@ package cloud.caravana.anonymouse;
 import java.util.logging.Logger;
 import javax.sql.*;
 import java.sql.*;
-import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -19,13 +18,13 @@ public class Anonymouse {
     private DataSource ds;
 
     @Autowired
-    private Classifier cx;
+    private SimpleClassifier cx;
 
     public Anonymouse(){}
 
     public Anonymouse(DataSource ds, String piiCols){
         this.ds = ds;
-        this.cx = new Classifier(piiCols);
+        this.cx = new SimpleClassifier(piiCols);
     }
 
     public void runTable(Connection conn, DatabaseMetaData dbmd, String tableName) throws Exception{
@@ -51,7 +50,7 @@ public class Anonymouse {
         throws SQLException {
         String columnName = rowsMD.getColumnName(col);
         String columnValue = rows.getString(col);
-        if ( cx.isInteresting(tableName, columnName, columnValue) ){
+        if ( ! cx.isPIISafe(tableName, columnName, columnValue) ){
             String newValue = ANON_PREFIX + " " + columnName + " " + row;
             log.finer("Anonymoused ["+ tableName +"].["+ columnName +"] := ["+newValue+"]");
             rows.updateString(columnName, newValue);
@@ -110,8 +109,8 @@ public class Anonymouse {
         }
     }
 
-    public boolean isAnonymized(String tableName, String colName, String colValue) {
-        return ! cx.isInteresting(tableName,colName,colValue);
+    public boolean isPIISafe(String tableName, String colName, String colValue) {
+        return cx.isPIISafe(tableName,colName,colValue);
     }
 
     public static void main( String[] args ) throws Exception {

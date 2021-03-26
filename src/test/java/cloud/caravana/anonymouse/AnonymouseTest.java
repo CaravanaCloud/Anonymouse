@@ -51,8 +51,6 @@ public class AnonymouseTest {
 
     @Test
     public void testConnectivity() throws Exception {
-        //anonymizer.run();
-        //assertFalse(hasNamedCustomer());
         assertNotNull(datasource);
         assertNotNull(datasource.getConnection());
     }
@@ -81,7 +79,7 @@ public class AnonymouseTest {
         List<Map<String, Object>> rows = jdbc.queryForList(sql);
         for (Map row : rows) {
             String cusName = (String) row.get("cus_name");
-            Boolean isName = !anonymouse.isAnonymized("CUSTOMER", "cus_name", cusName);
+            Boolean isName = !anonymouse.isPIISafe("CUSTOMER", "cus_name", cusName);
             if (isName) return true;
         }
         return false;
