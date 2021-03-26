@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import static java.lang.String.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -75,14 +76,14 @@ public class AnonymouseTest {
     }
 
     public Boolean hasNamedCustomer() {
-        String sql = "SELECT * FROM CUSTOMER";
-        List<Map<String, Object>> rows = jdbc.queryForList(sql);
-        for (Map row : rows) {
-            String cusName = (String) row.get("cus_name");
-            Boolean isName = !anonymouse.isPIISafe("CUSTOMER", "cus_name", cusName);
-            if (isName) return true;
-        }
-        return false;
+        var col = "cus_name";
+        var tbl = "CUSTOMER";
+        var sql = format("SELECT %s FROM %s",col,tbl);
+        var rows = jdbc.queryForList(sql);
+        var unsafe = rows.stream()
+            .filter(row -> ! anonymouse.isPIISafe(tbl, col, row.get(col).toString())
+        ).findFirst();
+        return unsafe.isPresent();
     }
 }
 

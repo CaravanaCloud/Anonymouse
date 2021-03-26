@@ -27,12 +27,4 @@ public class SimpleClassifier extends PIIClassifier {
         return PIIClass.Safe;
     }
 
-    public boolean isPIISafe(String tableName, String columnName, String columnValue){
-        return PIIClass.Safe.equals(classify(tableName, columnName, columnValue));
-    }
-
-    private static boolean isCleared(String columnValue) {
-        return columnValue == null || columnValue.startsWith(Anonymouse.ANON_PREFIX);
-    }
-
 }
