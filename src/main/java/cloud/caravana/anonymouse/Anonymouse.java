@@ -4,14 +4,24 @@ import java.util.logging.Logger;
 import javax.sql.*;
 import java.sql.*;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import static java.sql.ResultSet.*;
 
+@Component
 public class Anonymouse {
     public static String ANON_PREFIX = "|#| ";
 
     private static Logger log = Logger.getLogger("anonymouse");
+
+    @Autowired(required = false)
     private DataSource ds;
+
+    @Autowired
     private Classifier cx;
+
+    public Anonymouse(){}
 
     public Anonymouse(DataSource ds, String piiCols){
         this.ds = ds;
@@ -87,11 +97,14 @@ public class Anonymouse {
         }    
     }
 
-    public void run() throws Exception{
+    public void run(){
         if (ds == null) {
             log.warning("Can't connect without datasource");
         }else try (Connection conn = ds.getConnection()){
             runTables(conn);
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new RuntimeException(e);
         } finally{
             log.fine("Database anonymized");
         }

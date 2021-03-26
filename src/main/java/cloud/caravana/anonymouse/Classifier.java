@@ -3,9 +3,13 @@ package cloud.caravana.anonymouse;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
+@Component
 public class Classifier {
     private Set<String> piiCols;
+
+    public Classifier(){}
 
     public Classifier(String piiCols) {
         String[] piiColsArr = piiCols.toUpperCase().split("\\,");

@@ -26,3 +26,6 @@ target/
 
 .idea
 *.iml
+
+.envrc
+
