@@ -4,23 +4,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.flywaydb.core.Flyway;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -73,15 +65,16 @@ public class AnonymouseTest {
         assertFalse(hasNamedCustomer());
     }
 
-    private Boolean hasNamedCustomer() {
+    private boolean hasNamedCustomer() {
         var col = "cus_name";
         var tbl = "CUSTOMER";
         var sql = format("SELECT %s FROM %s",col,tbl);
-        var rows = jdbc.queryForList(sql);
-        var unsafe = rows.stream()
-            .filter(row -> ! anonymouse.isPIISafe(tbl, col, row.get(col).toString())
-        ).findFirst();
-        return unsafe.isPresent();
+        var rows = jdbc.queryForList(sql).stream();
+        return rows.anyMatch(row -> isPIIName(tbl,col,row));
+    }
+
+    private boolean isPIIName(String tbl, String col, Map<String, Object> row) {
+        return ! anonymouse.isPIISafe(tbl, col, row.get(col).toString());
     }
 }
 
