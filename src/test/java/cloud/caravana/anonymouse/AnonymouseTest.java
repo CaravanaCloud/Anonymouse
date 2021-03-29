@@ -39,6 +39,11 @@ public class AnonymouseTest {
     @Autowired
     private Anonymouse anonymouse;
 
+    private void loadTest(String migrationLoc) {
+        db.migrate( migrationLoc);
+        anonymouse.addConfig("classpath:/%s/pii_info.yaml".formatted(migrationLoc));
+    }
+
     @Test
     public void testConnectivity() throws Exception {
         assertNotNull(datasource);
@@ -47,9 +52,8 @@ public class AnonymouseTest {
 
     @Test
     public void testInitialDataHasNames() {
-        //given
         //when
-        db.migrate("db/migration", "anonName");
+        loadTest("anonName");
         //then
         assertTrue(hasNamedCustomer());
     }
@@ -57,9 +61,8 @@ public class AnonymouseTest {
     @Test
     public void testAnonDataHasNoNames() {
         //given
-        db.migrate("db/migration", "anonName");
+        loadTest("anonName");
         //when
-        anonymouse.setPIIColumns("customer.cus_name");
         anonymouse.run();
         //then
         assertFalse(hasNamedCustomer());
@@ -69,12 +72,13 @@ public class AnonymouseTest {
         var col = "cus_name";
         var tbl = "CUSTOMER";
         var sql = format("SELECT %s FROM %s",col,tbl);
-        var rows = jdbc.queryForList(sql).stream();
-        return rows.anyMatch(row -> isPIIName(tbl,col,row));
+        var rows = jdbc.queryForList(sql);
+        boolean hasName = rows.stream().anyMatch(row -> isPIIName(tbl, col, row));
+        return hasName;
     }
 
     private boolean isPIIName(String tbl, String col, Map<String, Object> row) {
-        return ! anonymouse.isPIISafe(tbl, col, row.get(col).toString());
+        return ! anonymouse.isPIISafe(row.get(col).toString(), tbl, col);
     }
 }
 

@@ -3,17 +3,19 @@ package cloud.caravana.anonymouse;
 import static java.sql.ResultSet.CONCUR_UPDATABLE;
 import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
+import java.util.Map;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.yaml.snakeyaml.Yaml;
 
 import static java.lang.String.*;
 
@@ -27,7 +29,7 @@ public class Anonymouse {
     private DataSource ds;
 
     @Autowired
-    private SimpleClassifier cx;
+    private ExplicitClassifier cx;
 
     public void runTable(String tableName) {
         try (Connection conn = ds.getConnection()) {
@@ -58,7 +60,7 @@ public class Anonymouse {
                               ResultSet rows, int row, int col) throws SQLException {
         String columnName = rowsMD.getColumnName(col);
         String columnValue = rows.getString(col);
-        PIIClass piiclass = cx.classify(tableName, columnName, columnValue);
+        PIIClass piiclass = cx.classify(columnValue, tableName, columnName);
         if (!PIIClass.Safe.equals(piiclass)) {
             String newValue = cx.generateString(row, columnName);
             log.finer("Anonymoused [" + tableName + "].[" + columnName + "] := [" + newValue + "]");
@@ -101,7 +103,7 @@ public class Anonymouse {
 
         boolean skip = "INFORMATION_SCHEMA".equalsIgnoreCase(table.tableSchem());
         skip |= "FLYWAY_SCHEMA_HISTORY".equalsIgnoreCase(table.tableName());
-        log.info(format("Skip [%s] Table [%s]",skip,table));
+        log.info(format("Skip [%s] Table [%s]", skip, table));
         return skip;
     }
 
@@ -116,11 +118,44 @@ public class Anonymouse {
         }
     }
 
-    public boolean isPIISafe(String tableName, String colName, String colValue) {
-        return cx.isPIISafe(tableName, colName, colValue);
+
+    public void addConfig(String URL) {
+        if (URL.startsWith("classpath:")) {
+            var resource = URL.split(":")[1];
+            try (
+                var istream = this.getClass()
+                                  .getResourceAsStream(resource)
+            ) {
+                if (istream != null) {
+                    var yaml = new Yaml();
+                    var cfgMap = (Map<String, Object>) yaml.load(istream);
+                    cfgMap.forEach((key,value) -> addRoot(key,value));
+                } else {
+                    log.warning("Failed to load config [%s]".formatted(URL));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new IllegalArgumentException();
+        }
     }
 
-    public void setPIIColumns(String piiColumns) {
-        cx.setPIIColumns(piiColumns);
+    private void addRoot(String key, Object value) {
+        if (value instanceof Map){
+            Map<String,Object> map = (Map<String, Object>) value;
+            map.forEach((ckey,cvalue) -> addChild(key,ckey,cvalue.toString()));
+            System.out.println(map.getClass());
+        }
+    }
+
+    private void addChild(String key, String ckey, String cvalue) {
+        PIIClass piiClass = PIIClass.valueOf(cvalue);
+        String cname = key + "." + ckey;
+        cx.setPIIClass(piiClass,cname);
+    }
+
+    public boolean isPIISafe(String value, String... context) {
+        return cx.isPIISafe(value,context);
     }
 }
