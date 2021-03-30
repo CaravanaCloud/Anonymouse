@@ -158,4 +158,8 @@ public class Anonymouse {
     public boolean isPIISafe(String value, String... context) {
         return cx.isPIISafe(value,context);
     }
+
+    public PIIClass classify(String value, String tbl, String col) {
+        return cx.classify(value, tbl, col);
+    }
 }

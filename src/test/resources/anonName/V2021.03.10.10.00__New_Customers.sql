@@ -1,8 +1,8 @@
-INSERT into CUSTOMER(CUS_ID,CUS_NAME)
-  VALUES (-100,'Julio Faerman');
+INSERT into CUSTOMER
+  VALUES (-100,'Julio Faerman','+346677889900');
 
-INSERT into CUSTOMER(CUS_ID,CUS_NAME)
-  VALUES (-200,'Marcus Vinicius');
+INSERT into CUSTOMER
+  VALUES (-200,'Marcus Vinicius','+556677889911');
   
-INSERT into CUSTOMER(CUS_ID,CUS_NAME)
-  VALUES (-300,'Nathalia Italiano');
+INSERT into CUSTOMER
+  VALUES (-300,'Nathalia Italiano','+346677889922');

@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static java.lang.String.*;
+import static cloud.caravana.anonymouse.PIIClass.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -68,17 +69,47 @@ public class AnonymouseTest {
         assertFalse(hasNamedCustomer());
     }
 
-    private boolean hasNamedCustomer() {
-        var col = "cus_name";
-        var tbl = "CUSTOMER";
+    @Test
+    public void testInitialDataHasPhone() {
+        //when
+        loadTest("anonName");
+        //then
+        assertTrue(hasPhonedCustomer());
+    }
+
+    @Test
+    public void testAnonDataHasNoPhone() {
+        //given
+        loadTest("anonName");
+        //when
+        anonymouse.run();
+        //then
+        assertFalse(hasPhonedCustomer());
+    }
+
+    private boolean hasPII(PIIClass piiClass, String tbl, String col) {
         var sql = format("SELECT %s FROM %s",col,tbl);
         var rows = jdbc.queryForList(sql);
-        boolean hasName = rows.stream().anyMatch(row -> isPIIName(tbl, col, row));
-        return hasName;
+        boolean hasPhone = rows.stream().anyMatch(row -> isPII(tbl, col, row, piiClass));
+        return hasPhone;
+    }
+
+    private boolean hasPhonedCustomer() {
+        return hasPII(Telephone, "CUSTOMER","cus_phone");
+    }
+
+    private boolean hasNamedCustomer() {
+        return hasPII(FullName, "CUSTOMER","cus_name");
     }
 
     private boolean isPIIName(String tbl, String col, Map<String, Object> row) {
-        return ! anonymouse.isPIISafe(row.get(col).toString(), tbl, col);
+        return isPII(tbl, col, row, PIIClass.FullName);
+    }
+
+    private boolean isPII(String tbl, String col, Map<String, Object> row, PIIClass piiClass) {
+        var value = row.get(col).toString();
+        var valueClass = anonymouse.classify(value, tbl, col);
+        return valueClass.equals(piiClass);
     }
 }
 

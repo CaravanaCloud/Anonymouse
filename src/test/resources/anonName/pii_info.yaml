@@ -1,2 +1,4 @@
 CUSTOMER:
   CUS_NAME: FullName
+  CUS_PHONE: Telephone
+
