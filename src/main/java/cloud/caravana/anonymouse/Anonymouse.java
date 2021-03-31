@@ -22,13 +22,13 @@ import static java.lang.String.*;
 @ApplicationScoped
 public class Anonymouse {
     @Inject
-    private Logger log;
+    Logger log;
 
     @Inject
     JDBCIterator dbIterator;
 
     @Inject
-    private ExplicitClassifier cx;
+    ExplicitClassifier cx;
 
     public boolean isPIISafe(String value, String... context) {
         return cx.isPIISafe(value,context);
@@ -40,9 +40,5 @@ public class Anonymouse {
 
     public void run() {
         dbIterator.run();
-    }
-
-    public void addConfig(String url) {
-        cx.addConfig(url);
     }
 }

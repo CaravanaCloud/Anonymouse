@@ -21,18 +21,17 @@ public class AnonymouseTest {
     private final Log logger = LogFactory.getLog(getClass());
 
     @Inject
-    TestConfig db;
+    TestConfig config;
 
     @Inject
     DataSource datasource;
-
 
     @Inject
     Anonymouse anonymouse;
 
     private void loadTest(String migrationLoc) {
-        db.migrate(migrationLoc);
-        anonymouse.addConfig("classpath:/%s/pii_info.yaml".formatted(migrationLoc));
+        config.migrate(migrationLoc);
+        config.add("classpath:/%s/pii_info.yaml".formatted(migrationLoc));
     }
 
     @Test
@@ -80,13 +79,13 @@ public class AnonymouseTest {
     private boolean hasPII(PIIClass piiClass, String tbl, String col) {
         var sql = format("SELECT %s FROM %s",col,tbl);
         var rows = queryForList(sql);
-        boolean hasPhone = rows.stream().anyMatch(row -> isPII(tbl, col, row, piiClass));
-        return hasPhone;
+        boolean hasPII = rows.stream().anyMatch(row -> isPII(tbl, col, row, piiClass));
+        return hasPII;
     }
 
     private List<String> queryForList(String sql) {
         var result = new ArrayList<String>();
-        try(var conn = db.getDataSource().getConnection()){
+        try(var conn = config.getDataSource().getConnection()){
             var rs = conn.createStatement().executeQuery(sql);
             while (rs.next()) result.add(rs.getString(1));
         } catch (SQLException ex) {

@@ -11,7 +11,8 @@ import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 
 @Mock
-public class TestConfig implements Configuration{
+@ApplicationScoped
+public class TestConfig extends BaseConfiguration{
 
     @Produces
     public DataSource getDataSource() {

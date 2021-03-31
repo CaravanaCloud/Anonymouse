@@ -19,13 +19,13 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class JDBCIterator {
     @Inject
-    private Logger log;
+    Logger log;
 
     @Inject
-    private DataSource ds;
+    DataSource ds;
 
     @Inject
-    private ExplicitClassifier cx;
+    ExplicitClassifier cx;
 
 
     public void runTable(String tableName) {

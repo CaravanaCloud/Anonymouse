@@ -4,7 +4,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
 
-public class EnvConfiguration {
+public class EnvConfiguration extends BaseConfiguration{
     public DataSource getDataSource() {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(getJDBCUrl());

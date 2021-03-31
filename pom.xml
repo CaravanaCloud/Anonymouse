@@ -143,7 +143,10 @@
         <configuration>
           <source>16</source>
           <target>16</target>
-          <compilerArgs>--enable-preview</compilerArgs>
+          <compilerArgs>
+            <arg>--enable-preview</arg>
+            <arg>-Xlint:all</arg>
+          </compilerArgs>
         </configuration>
       </plugin>
 
