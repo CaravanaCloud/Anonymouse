@@ -7,16 +7,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import org.yaml.snakeyaml.Yaml;
 
-@Component
-@Scope("singleton")
+@ApplicationScoped
 public class ExplicitClassifier {
-    @Autowired
-    private Logger log;
+    @Inject
+    Logger log;
 
     public static String ANON_PREFIX = "|#| ";
     Map<String,PIIClass> piiClasses = new HashMap<String,PIIClass>();

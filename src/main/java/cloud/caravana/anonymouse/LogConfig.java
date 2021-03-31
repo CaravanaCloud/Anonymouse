@@ -1,17 +1,14 @@
 package cloud.caravana.anonymouse;
 
 import java.util.logging.Logger;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Scope;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
+import javax.inject.Qualifier;
 
-@Configuration
+@ApplicationScoped
 public class LogConfig {
 
-    @Bean
-    @Scope("singleton")
-    @Primary
+    @Produces
     public Logger getLogger(){
         return Logger.getLogger("anonymouse");
     }

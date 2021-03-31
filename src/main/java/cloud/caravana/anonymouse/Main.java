@@ -1,27 +1,23 @@
 package cloud.caravana.anonymouse;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 
-@SpringBootApplication
-public class Main implements CommandLineRunner {
-    @Autowired
-    private Anonymouse anonymouse;
+import io.quarkus.runtime.Quarkus;
+import io.quarkus.runtime.QuarkusApplication;
+import io.quarkus.runtime.annotations.QuarkusMain;
+import javax.inject.Inject;
+
+@QuarkusMain
+public class Main implements QuarkusApplication {
+    @Inject
+    Anonymouse anonymouse;
 
     @Override
-    public void run(String... args) {
+    public int run(String... args) throws Exception {
         anonymouse.run();
+        return 0;
     }
 
-    public static void main(String[] args) {
-        SpringApplication.run(Main.class, args);
+    public static void main(String ...args) {
+        Quarkus.run(Main.class,args);
     }
-
-
 }

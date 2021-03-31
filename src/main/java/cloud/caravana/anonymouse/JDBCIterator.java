@@ -11,22 +11,20 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.logging.Logger;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.sql.DataSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
-@Component
-@Scope("singleton")
+
+@ApplicationScoped
 public class JDBCIterator {
-    @Autowired
+    @Inject
     private Logger log;
 
-    @Autowired
+    @Inject
     private DataSource ds;
 
-    @Autowired
+    @Inject
     private ExplicitClassifier cx;
 
 

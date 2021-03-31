@@ -12,22 +12,22 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Map;
 import java.util.logging.Logger;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.sql.DataSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
 
 import static java.lang.String.*;
 
-@Component
+@ApplicationScoped
 public class Anonymouse {
-    @Autowired
+    @Inject
     private Logger log;
 
-    @Autowired
+    @Inject
     JDBCIterator dbIterator;
 
-    @Autowired
+    @Inject
     private ExplicitClassifier cx;
 
     public boolean isPIISafe(String value, String... context) {

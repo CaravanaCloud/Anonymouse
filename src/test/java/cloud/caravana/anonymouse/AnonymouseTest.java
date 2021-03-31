@@ -1,54 +1,44 @@
 package cloud.caravana.anonymouse;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
-import java.util.Map;
+import io.quarkus.test.junit.QuarkusTest;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.inject.Inject;
 import javax.sql.DataSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.Test;
 
 import static java.lang.String.*;
 import static cloud.caravana.anonymouse.PIIClass.*;
+import static org.assertj.core.api.Assertions.*;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
-@Import(TestDBConfig.class)
+@QuarkusTest
 public class AnonymouseTest {
 
     private final Log logger = LogFactory.getLog(getClass());
 
-    @Autowired
-    @Qualifier("test")
-    private DataSource datasource;
+    @Inject
+    TestConfig db;
 
-    @Autowired
-    private TestDBConfig db;
+    @Inject
+    DataSource datasource;
 
-    @Autowired
-    private JdbcTemplate jdbc;
 
-    @Autowired
-    private Anonymouse anonymouse;
+    @Inject
+    Anonymouse anonymouse;
 
     private void loadTest(String migrationLoc) {
-        db.migrate( migrationLoc);
+        db.migrate(migrationLoc);
         anonymouse.addConfig("classpath:/%s/pii_info.yaml".formatted(migrationLoc));
     }
 
     @Test
     public void testConnectivity() throws Exception {
-        assertNotNull(datasource);
-        assertNotNull(datasource.getConnection());
+        assertThat(datasource).isNotNull();
+        assertThat(datasource.getConnection()).isNotNull();
     }
 
     @Test
@@ -56,7 +46,7 @@ public class AnonymouseTest {
         //when
         loadTest("anonName");
         //then
-        assertTrue(hasNamedCustomer());
+        assertThat(hasNamedCustomer()).isTrue();
     }
 
     @Test
@@ -66,7 +56,7 @@ public class AnonymouseTest {
         //when
         anonymouse.run();
         //then
-        assertFalse(hasNamedCustomer());
+        assertThat(hasNamedCustomer()).isFalse();
     }
 
     @Test
@@ -74,7 +64,7 @@ public class AnonymouseTest {
         //when
         loadTest("anonName");
         //then
-        assertTrue(hasPhonedCustomer());
+        assertThat(hasPhonedCustomer()).isTrue();
     }
 
     @Test
@@ -84,14 +74,25 @@ public class AnonymouseTest {
         //when
         anonymouse.run();
         //then
-        assertFalse(hasPhonedCustomer());
+        assertThat(hasPhonedCustomer()).isFalse();
     }
 
     private boolean hasPII(PIIClass piiClass, String tbl, String col) {
         var sql = format("SELECT %s FROM %s",col,tbl);
-        var rows = jdbc.queryForList(sql);
+        var rows = queryForList(sql);
         boolean hasPhone = rows.stream().anyMatch(row -> isPII(tbl, col, row, piiClass));
         return hasPhone;
+    }
+
+    private List<String> queryForList(String sql) {
+        var result = new ArrayList<String>();
+        try(var conn = db.getDataSource().getConnection()){
+            var rs = conn.createStatement().executeQuery(sql);
+            while (rs.next()) result.add(rs.getString(1));
+        } catch (SQLException ex) {
+            fail(ex.getMessage(),ex);
+        }
+        return result;
     }
 
     private boolean hasPhonedCustomer() {
@@ -102,12 +103,11 @@ public class AnonymouseTest {
         return hasPII(FullName, "CUSTOMER","cus_name");
     }
 
-    private boolean isPIIName(String tbl, String col, Map<String, Object> row) {
-        return isPII(tbl, col, row, PIIClass.FullName);
+    private boolean isPIIName(String tbl, String col, String value) {
+        return isPII(tbl, col, value, PIIClass.FullName);
     }
 
-    private boolean isPII(String tbl, String col, Map<String, Object> row, PIIClass piiClass) {
-        var value = row.get(col).toString();
+    private boolean isPII(String tbl, String col, String value, PIIClass piiClass) {
         var valueClass = anonymouse.classify(value, tbl, col);
         return valueClass.equals(piiClass);
     }
