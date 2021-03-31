@@ -1,14 +1,23 @@
 package cloud.caravana.anonymouse;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.yaml.snakeyaml.Yaml;
 
 @Component
+@Scope("singleton")
 public class ExplicitClassifier {
+    @Autowired
+    private Logger log;
+
     public static String ANON_PREFIX = "|#| ";
     Map<String,PIIClass> piiClasses = new HashMap<String,PIIClass>();
 
@@ -40,4 +49,40 @@ public class ExplicitClassifier {
     public String generateString(Integer rowNum,String columnName) {
         return ANON_PREFIX + " " + columnName + " " + rowNum;
     }
+
+    public void addConfig(String URL) {
+        if (URL.startsWith("classpath:")) {
+            var resource = URL.split(":")[1];
+            try (
+                var istream = this.getClass()
+                                  .getResourceAsStream(resource)
+            ) {
+                if (istream != null) {
+                    var yaml = new Yaml();
+                    var cfgMap = (Map<String, Object>) yaml.load(istream);
+                    cfgMap.forEach((key,value) -> addRoot(key,value));
+                } else {
+                    log.warning("Failed to load config [%s]".formatted(URL));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private void addRoot(String key, Object value) {
+        if (value instanceof Map){
+            Map<String,Object> map = (Map<String, Object>) value;
+            map.forEach((ckey,cvalue) -> addChild(key,ckey,cvalue.toString()));
+        }
+    }
+
+    private void addChild(String key, String ckey, String cvalue) {
+        PIIClass piiClass = PIIClass.valueOf(cvalue);
+        String cname = key + "." + ckey;
+        setPIIClass(piiClass,cname);
+    }
+
 }
