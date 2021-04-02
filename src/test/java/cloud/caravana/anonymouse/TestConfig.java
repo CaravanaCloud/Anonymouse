@@ -4,15 +4,13 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.quarkus.test.Mock;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Produces;
-import javax.inject.Qualifier;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 
 @Mock
 @ApplicationScoped
-public class TestConfig extends BaseConfiguration{
+public class TestConfig extends BaseConfiguration {
 
     @Produces
     public DataSource getDataSource() {

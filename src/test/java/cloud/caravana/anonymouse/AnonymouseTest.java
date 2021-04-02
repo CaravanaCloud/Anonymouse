@@ -1,6 +1,13 @@
 package cloud.caravana.anonymouse;
 
 
+import static cloud.caravana.anonymouse.PIIClass.FullName;
+import static cloud.caravana.anonymouse.PIIClass.Telephone;
+import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
+import cloud.caravana.anonymouse.classifier.CompositeClassifier;
 import io.quarkus.test.junit.QuarkusTest;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -10,10 +17,6 @@ import javax.sql.DataSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.Test;
-
-import static java.lang.String.*;
-import static cloud.caravana.anonymouse.PIIClass.*;
-import static org.assertj.core.api.Assertions.*;
 
 @QuarkusTest
 public class AnonymouseTest {
@@ -28,6 +31,9 @@ public class AnonymouseTest {
 
     @Inject
     Anonymouse anonymouse;
+
+    @Inject
+    CompositeClassifier cx;
 
     private void loadTest(String migrationLoc) {
         config.migrate(migrationLoc);
@@ -107,8 +113,11 @@ public class AnonymouseTest {
     }
 
     private boolean isPII(String tbl, String col, String value, PIIClass piiClass) {
-        var valueClass = anonymouse.classify(value, tbl, col);
-        return valueClass.equals(piiClass);
+        var cn = cx.classify(value, tbl, col);
+        boolean cnMatch = cn.isPresent() && cn.get()
+                                        .piiClass()
+                                        .equals(piiClass);
+        return cnMatch;
     }
 }
 

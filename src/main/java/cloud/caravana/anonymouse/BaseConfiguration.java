@@ -5,16 +5,25 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Default;
+import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import org.yaml.snakeyaml.Yaml;
 
 @SuppressWarnings({"unchecked","preview"})
 @ApplicationScoped
-public class BaseConfiguration implements Configuration{
+@Default
+public class BaseConfiguration extends Configuration{
     @Inject
     Logger log;
 
-    Map<String,PIIClass> piiClasses = new HashMap<String,PIIClass>();
+    Map<String,PIIClass> piiClasses = new HashMap<>();
+
+    @Produces
+    @Setting("anonPrefix")
+    public String getAnonPrefix(){
+        return "|#|";
+    }
 
     @Override
     public void add(String URL) {
@@ -31,7 +40,7 @@ public class BaseConfiguration implements Configuration{
                 if (istream != null) {
                     var yaml = new Yaml();
                     var cfgMap = (Map<String, Object>) yaml.load(istream);
-                    cfgMap.forEach((key,value) -> addRoot(key,value));
+                    cfgMap.forEach(this::addRoot);
                 } else {
                     log.warning("Failed to load config [%s]".formatted(URL));
                 }
@@ -62,7 +71,6 @@ public class BaseConfiguration implements Configuration{
 
     @Override
     public PIIClass getPIIClass(String cname) {
-        PIIClass piiClass = piiClasses.getOrDefault(cname, PIIClass.Safe);
-        return piiClass;
+        return piiClasses.getOrDefault(cname, PIIClass.Safe);
     }
 }

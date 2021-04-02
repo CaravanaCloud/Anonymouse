@@ -1,11 +1,12 @@
 package cloud.caravana.anonymouse;
 
-import javax.enterprise.context.ApplicationScoped;
+public abstract class Configuration {
 
-@ApplicationScoped
-public interface Configuration {
+    abstract PIIClass getPIIClass(String cname);
 
-    PIIClass getPIIClass(String cname);
+    abstract void add(String url);
 
-    void add(String url);
+    public boolean isDeclared(String cname, PIIClass piiClass){
+        return getPIIClass(cname).equals(piiClass);
+    }
 }

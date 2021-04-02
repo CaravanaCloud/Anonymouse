@@ -4,6 +4,8 @@ import static java.lang.String.format;
 import static java.sql.ResultSet.CONCUR_UPDATABLE;
 import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
 
+import cloud.caravana.anonymouse.classifier.Classifier;
+import cloud.caravana.anonymouse.classifier.CompositeClassifier;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -15,7 +17,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-
 @ApplicationScoped
 public class JDBCIterator {
     @Inject
@@ -25,8 +26,7 @@ public class JDBCIterator {
     DataSource ds;
 
     @Inject
-    ExplicitClassifier cx;
-
+    CompositeClassifier cx;
 
     public void runTable(String tableName) {
         try (Connection conn = ds.getConnection()) {
@@ -54,15 +54,22 @@ public class JDBCIterator {
     }
 
     private void updateString(String tableName, ResultSetMetaData rowsMD,
-                              ResultSet rows, int row, int col) throws SQLException {
-        String columnName = rowsMD.getColumnName(col);
-        String columnValue = rows.getString(col);
-        PIIClass piiclass = cx.classify(columnValue, tableName, columnName);
-        if (!PIIClass.Safe.equals(piiclass)) {
-            String newValue = cx.generateString(row, columnName);
-            log.finer("Anonymoused [" + tableName + "].[" + columnName + "] := [" + newValue + "]");
-            rows.updateString(columnName, newValue);
-        }
+                              ResultSet rows, int row, int col) throws SQLException{
+            var columnName = rowsMD.getColumnName(col);
+            var columnValue = rows.getString(col);
+            var piiClassO = cx.classify(columnValue, tableName, columnName);
+            var piiClfnO = piiClassO.stream();
+            piiClfnO.forEach(piiClfn -> {
+                Classifier piiCx = piiClfn.classifier();
+                String newValue = piiCx.generateString(columnName, row);
+                log.finer("Updating string [" + tableName + "].[" + columnName + "] := [" + newValue + "]");
+                try {
+                    rows.updateString(columnName, newValue);
+                } catch (SQLException ex) {
+                    log.warning("Failed to update [" + tableName + "].[" + col + "] ");
+                    log.throwing("JDBIterator","updateString",ex);
+                }
+            });
     }
 
     public static boolean isStringType(int columnType) {
@@ -105,13 +112,22 @@ public class JDBCIterator {
     }
 
     public void run() {
-        try (Connection conn = ds.getConnection()) {
+        try {
+            ping();
             runTables();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.info("Failed to anonymize");
+            log.throwing("Anonymouse","run",e);
             throw new RuntimeException(e);
         } finally {
             log.fine("Database anonymized");
+        }
+    }
+
+    private void ping() throws SQLException {
+        try(var conn = ds.getConnection();
+            var stmt = conn.createStatement()){
+            stmt.executeQuery("SELECT 1+1");
         }
     }
 }
