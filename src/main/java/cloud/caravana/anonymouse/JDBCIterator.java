@@ -61,7 +61,7 @@ public class JDBCIterator {
             var piiClfnO = piiClassO.stream();
             piiClfnO.forEach(piiClfn -> {
                 Classifier piiCx = piiClfn.classifier();
-                String newValue = piiCx.generateString(columnName, row);
+                String newValue = piiCx.generateString(row,columnName);
                 log.finer("Updating string [" + tableName + "].[" + columnName + "] := [" + newValue + "]");
                 try {
                     rows.updateString(columnName, newValue);

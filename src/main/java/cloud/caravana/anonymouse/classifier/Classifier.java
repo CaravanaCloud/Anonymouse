@@ -26,7 +26,7 @@ public class Classifier {
         return PIIClass.OtherPII.by(this);
     }
 
-    Optional<Classification> _classify(String value, PIIClass target, String[] context) {
+    Optional<Classification> ifDeclared(String value, PIIClass target, String[] context) {
         if ((value != null) &&
             (!isAnonymized(value))){
             var cname = cname(context);
@@ -37,8 +37,8 @@ public class Classifier {
         return Optional.empty();
     }
 
-    public String generateString(String columnName, int rowId){
-        return "";
+    public String generateString(int index, String... context){
+        return "_"+index;
     }
 
     protected boolean isAnonymized(String value) {

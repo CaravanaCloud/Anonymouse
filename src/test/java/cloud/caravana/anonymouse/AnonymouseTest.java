@@ -97,6 +97,7 @@ public class AnonymouseTest {
         } catch (SQLException ex) {
             fail(ex.getMessage(),ex);
         }
+        logger.info(result.toString());
         return result;
     }
 
