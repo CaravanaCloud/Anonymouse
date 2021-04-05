@@ -21,3 +21,4 @@ public class Main implements QuarkusApplication {
         Quarkus.run(Main.class,args);
     }
 }
+
