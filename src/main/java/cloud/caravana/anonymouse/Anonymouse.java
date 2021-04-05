@@ -1,6 +1,5 @@
 package cloud.caravana.anonymouse;
 
-import cloud.caravana.anonymouse.classifier.CompositeClassifier;
 import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;

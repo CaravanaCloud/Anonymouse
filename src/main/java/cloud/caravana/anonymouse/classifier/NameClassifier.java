@@ -1,9 +1,8 @@
 package cloud.caravana.anonymouse.classifier;
 
-import cloud.caravana.anonymouse.Classification;
-
 import static cloud.caravana.anonymouse.PIIClass.FullName;
 
+import cloud.caravana.anonymouse.Classification;
 import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 
