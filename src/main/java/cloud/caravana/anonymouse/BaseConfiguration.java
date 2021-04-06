@@ -63,18 +63,21 @@ public class BaseConfiguration extends Configuration {
         }
     }
 
-    private void addChild(final String key,final  String ckey,final  String cvalue) {
+    private void addChild(final String key,
+                          final String ckey,
+                          final  String cvalue) {
         PIIClass piiClass = PIIClass.valueOf(cvalue);
         String cname = key + "." + ckey;
         setPIIClass(piiClass, cname);
     }
 
-    public void setPIIClass(final PIIClass piiClass,final String cname) {
+    private void setPIIClass(final PIIClass piiClass,
+                             final String cname) {
         piiClasses.put(cname.toUpperCase(), piiClass);
     }
 
     @Override
-    public PIIClass getPIIClass(String cname) {
+    public final PIIClass getPIIClass(final String cname) {
         return piiClasses.getOrDefault(cname, PIIClass.Safe);
     }
 }
