@@ -4,8 +4,9 @@ Prevent data leaks from test environments by erasing all Personally Identifiable
 
 # Current Status
 
-![jacoco coverage](https://s3-us-west-2.amazonaws.com/anonymouse.caravana.cloud/badges/jacoco.svg)
-[![GitHub Super-Linter](https://github.com/CaravanaCloud/Anonymouse/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
+![Maven Build](https://github.com/CaravanaCloud/Anonymouse/workflows/Maven-Build/badge.svg)
+![JaCoCo coverage](https://s3-us-west-2.amazonaws.com/anonymouse.caravana.cloud/badges/jacoco.svg)
+![GitHub Super-Linter](https://github.com/CaravanaCloud/Anonymouse/workflows/Super-Linter/badge.svg)
 
 
 Initial proof of concept.
