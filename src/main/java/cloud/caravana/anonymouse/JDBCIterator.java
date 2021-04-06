@@ -83,7 +83,7 @@ public class JDBCIterator {
             rows.updateString(columnName, newValue);
         } catch (SQLException ex) {
             log.warning("Failed to update [" + tableName + "].[" + col + "] ");
-            log.throwing("JDBIterator","updateString",ex);
+            log.throwing("JDBIterator", "updateString", ex);
         }
     }
 
@@ -109,7 +109,8 @@ public class JDBCIterator {
     private boolean isSkippedTable(ResultSet rs)
         throws SQLException {
         var table = Table.of(rs);
-        boolean skip = "INFORMATION_SCHEMA".equalsIgnoreCase(table.tableSchem());
+        boolean skip = "INFORMATION_SCHEMA"
+            .equalsIgnoreCase(table.tableSchem());
         skip |= "FLYWAY_SCHEMA_HISTORY".equalsIgnoreCase(table.tableName());
         log.info(format("Skip [%s] Table [%s]", skip, table));
         return skip;
@@ -121,7 +122,7 @@ public class JDBCIterator {
             runTables();
         } catch (Exception e) {
             log.info("Failed to anonymize");
-            log.throwing("Anonymouse","run",e);
+            log.throwing("Anonymouse", "run", e);
             throw new RuntimeException(e);
         } finally {
             log.fine("Database anonymized");

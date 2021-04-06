@@ -11,6 +11,6 @@ public enum PIIClass {
     OtherPII;
 
     public Optional<Classification> by(Classifier cx) {
-        return Optional.of(new Classification(this,cx));
+        return Optional.of(new Classification(this, cx));
     }
 }

@@ -8,6 +8,7 @@ import java.util.Optional;
 import javax.inject.Inject;
 
 public class Classifier {
+
     @Inject
     Configuration cfg;
 
@@ -28,23 +29,22 @@ public class Classifier {
 
     Optional<Classification> ifDeclared(String value, PIIClass target, String[] context) {
         if ((value != null) &&
-            (!isAnonymized(value))){
+            (!isAnonymized(value))) {
             var cname = cname(context);
             boolean isTargeted = cfg.isDeclared(cname, target);
-            if (isTargeted)
+            if (isTargeted) {
                 return target.by(this);
+            }
         }
         return Optional.empty();
     }
 
-    public String generateString(int index, String... context){
-        return "_"+index;
+    public String generateString(int index, String... context) {
+        return "_" + index;
     }
 
     protected boolean isAnonymized(String value) {
         boolean isPIISafe = value.startsWith(anonPrefix);
         return isPIISafe;
     }
-
-
 }

@@ -8,7 +8,7 @@ import javax.enterprise.inject.Produces;
 public class LogConfig {
 
     @Produces
-    public Logger getLogger(){
+    public Logger getLogger() {
         return Logger.getLogger("anonymouse");
     }
 }

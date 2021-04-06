@@ -18,8 +18,8 @@ public class Main implements QuarkusApplication {
         return 0;
     }
 
-    public static void main(String ...args) {
-        Quarkus.run(Main.class,args);
+    public static void main(String... args) {
+        Quarkus.run(Main.class, args);
     }
 }
 
