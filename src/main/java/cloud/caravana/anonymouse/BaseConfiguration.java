@@ -21,12 +21,12 @@ public class BaseConfiguration extends Configuration {
 
     @Produces
     @Setting("anonPrefix")
-    public String getAnonPrefix() {
+    public final String getAnonPrefix() {
         return "|#|";
     }
 
     @Override
-    public void add(String URL) {
+    public final void add(final String URL) {
         if (URL == null) {
             log.warning("Cannot load null configuration URL");
             return;
@@ -38,7 +38,7 @@ public class BaseConfiguration extends Configuration {
         }
     }
 
-    private void addFromURL(String URL) {
+    private void addFromURL(final String URL) {
         var resource = URL.split(":")[1];
         try (
             var istream = getClass().getResourceAsStream(resource)
@@ -55,20 +55,21 @@ public class BaseConfiguration extends Configuration {
         }
     }
 
-    private void addRoot(String key, Object value) {
+    private void addRoot(final String key, final Object value) {
         if (value instanceof Map) {
             Map<String, Object> map = (Map<String, Object>) value;
-            map.forEach((ckey, cvalue) -> addChild(key, ckey, cvalue.toString()));
+            map.forEach((ckey, cvalue) ->
+                addChild(key, ckey, cvalue.toString()));
         }
     }
 
-    private void addChild(String key, String ckey, String cvalue) {
+    private void addChild(final String key,final  String ckey,final  String cvalue) {
         PIIClass piiClass = PIIClass.valueOf(cvalue);
         String cname = key + "." + ckey;
         setPIIClass(piiClass, cname);
     }
 
-    public void setPIIClass(PIIClass piiClass, String cname) {
+    public void setPIIClass(final PIIClass piiClass,final String cname) {
         piiClasses.put(cname.toUpperCase(), piiClass);
     }
 
