@@ -192,7 +192,9 @@
     <!-- Miscellaneous other checks.                   -->
     <!-- See https://checkstyle.org/config_misc.html -->
     <module name="ArrayTypeStyle"/>
+    <!-- This is not so useful
     <module name="FinalParameters"/>
+    -->
     <module name="TodoComment"/>
     <module name="UpperEll"/>
 
