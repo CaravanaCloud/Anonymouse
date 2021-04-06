@@ -91,20 +91,10 @@ public class JDBCIterator {
         }
     }
 
-    private boolean isSkippedTable(ResultSet rs) throws SQLException {
-        var table = new Table(
-            rs.getString("TABLE_CAT"),
-            rs.getString("TABLE_SCHEM"),
-            rs.getString("TABLE_NAME"),
-            rs.getString("TABLE_TYPE"),
-            rs.getString("TYPE_CAT"),
-            rs.getString("TYPE_SCHEM"),
-            rs.getString("TYPE_NAME"),
-            rs.getString("REMARKS"),
-            rs.getString("SELF_REFERENCING_COL_NAME"),
-            rs.getString("REF_GENERATION")
-        );
 
+    private boolean isSkippedTable(ResultSet rs)
+        throws SQLException {
+        var table = Table.of(rs);
         boolean skip = "INFORMATION_SCHEMA".equalsIgnoreCase(table.tableSchem());
         skip |= "FLYWAY_SCHEMA_HISTORY".equalsIgnoreCase(table.tableName());
         log.info(format("Skip [%s] Table [%s]", skip, table));
