@@ -197,7 +197,9 @@
     <!-- This is not so useful
     <module name="FinalParameters"/>
     -->
+    <!-- TODOs are fine
     <module name="TodoComment"/>
+    -->
     <module name="UpperEll"/>
 
     <!-- https://checkstyle.org/config_filters.html#SuppressionXpathFilter -->

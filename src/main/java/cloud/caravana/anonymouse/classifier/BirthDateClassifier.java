@@ -12,9 +12,8 @@ import javax.enterprise.context.ApplicationScoped;
 //TODO: Support multiple date patterns
 @ApplicationScoped
 public class BirthDateClassifier extends Classifier {
-
     Calendar anonCal;
-    String ANON_DATE = "01/01/0001";
+
 
     public BirthDateClassifier() {
         anonCal = Calendar.getInstance();
