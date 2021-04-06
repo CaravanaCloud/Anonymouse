@@ -26,20 +26,20 @@ public class BaseConfiguration extends Configuration {
     }
 
     @Override
-    public final void add(final String URL) {
-        if (URL == null) {
+    public final void add(final String url) {
+        if (url == null) {
             log.warning("Cannot load null configuration URL");
             return;
         }
-        if (URL.startsWith("classpath:")) {
-            addFromURL(URL);
+        if (url.startsWith("classpath:")) {
+            addFromURL(url);
         } else {
             throw new IllegalArgumentException();
         }
     }
 
-    private void addFromURL(final String URL) {
-        var resource = URL.split(":")[1];
+    private void addFromURL(final String url) {
+        var resource = url.split(":")[1];
         try (
             var istream = getClass().getResourceAsStream(resource)
         ) {
@@ -48,7 +48,7 @@ public class BaseConfiguration extends Configuration {
                 var cfgMap = (Map<String, Object>) yaml.load(istream);
                 cfgMap.forEach(this::addRoot);
             } else {
-                log.warning("Failed to load config [%s]".formatted(URL));
+                log.warning("Failed to load config [%s]".formatted(url));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
