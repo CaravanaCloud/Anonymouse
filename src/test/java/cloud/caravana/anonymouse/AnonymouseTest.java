@@ -1,6 +1,7 @@
 package cloud.caravana.anonymouse;
 
 
+import static cloud.caravana.anonymouse.PIIClass.BirthDate;
 import static cloud.caravana.anonymouse.PIIClass.FullName;
 import static cloud.caravana.anonymouse.PIIClass.Telephone;
 import static java.lang.String.format;
@@ -82,6 +83,24 @@ public class AnonymouseTest {
         assertThat(hasPhonedCustomer()).isFalse();
     }
 
+    @Test
+    public void testInitialDataHasBDay() {
+        //when
+        loadTest("anonName");
+        //then
+        assertThat(hasBDayCustomer()).isTrue();
+    }
+
+    @Test
+    public void testAnonDataHasNoBDay() {
+        //given
+        loadTest("anonName");
+        //when
+        anonymouse.run();
+        //then
+        assertThat(hasBDayCustomer()).isFalse();
+    }
+
     private boolean hasPII(PIIClass piiClass, String tbl, String col) {
         var sql = format("SELECT %s FROM %s",col,tbl);
         var rows = queryForList(sql);
@@ -103,6 +122,10 @@ public class AnonymouseTest {
 
     private boolean hasPhonedCustomer() {
         return hasPII(Telephone, "CUSTOMER","cus_phone");
+    }
+
+    private boolean hasBDayCustomer() {
+        return hasPII(BirthDate, "CUSTOMER","cus_bday");
     }
 
     private boolean hasNamedCustomer() {

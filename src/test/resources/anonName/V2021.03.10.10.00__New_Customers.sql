@@ -1,8 +1,8 @@
 INSERT into CUSTOMER
-  VALUES (-100,'Julio Faerman','+346677889900');
+  VALUES (-100,'Julio Faerman','+346677889900', '09/01/1980');
 
 INSERT into CUSTOMER
-  VALUES (-200,'Marcus Vinicius','+556677889911');
+  VALUES (-200,'Marcus Vinicius','+556677889911', '09/01/1990');
   
 INSERT into CUSTOMER
-  VALUES (-300,'Nathalia Italiano','+346677889922');
+  VALUES (-300,'Nathalia Italiano','+346677889922', '09/01/2000');

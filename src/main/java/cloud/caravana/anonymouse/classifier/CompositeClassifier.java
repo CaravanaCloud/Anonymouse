@@ -14,9 +14,11 @@ public class CompositeClassifier extends Classifier{
     @Inject
     public CompositeClassifier(
         NameClassifier names,
-        PhoneClassifier phones){
+        PhoneClassifier phones,
+        BirthDateClassifier bdates){
         classifiers.add(names);
         classifiers.add(phones);
+        classifiers.add(bdates);
     }
 
     @Override

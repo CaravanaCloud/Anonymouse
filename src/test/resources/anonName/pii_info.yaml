@@ -1,4 +1,4 @@
 CUSTOMER:
   CUS_NAME: FullName
   CUS_PHONE: Telephone
-
+  CUS_BDAY: BirthDate

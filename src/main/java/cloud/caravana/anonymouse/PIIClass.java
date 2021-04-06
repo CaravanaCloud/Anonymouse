@@ -4,6 +4,7 @@ import cloud.caravana.anonymouse.classifier.Classifier;
 import java.util.Optional;
 
 public enum PIIClass {
+    BirthDate,
     Telephone,
     FullName,
     Safe,
