@@ -31,7 +31,8 @@ public class JDBCIterator {
     public void runTable(String tableName) {
         try (Connection conn = ds.getConnection()) {
             var sql = "SELECT * FROM " + tableName;
-            var statement = conn.createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_UPDATABLE);
+            var statement = conn
+                .createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_UPDATABLE);
             var rows = statement.executeQuery(sql);
             var rowsMD = rows.getMetaData();
             var colCnt = rowsMD.getColumnCount();
@@ -53,23 +54,33 @@ public class JDBCIterator {
         }
     }
 
-    private void updateString(String tableName, ResultSetMetaData rowsMD,
-                              ResultSet rows, int row, int col) throws SQLException{
+    private void updateString(String tableName,
+                              ResultSetMetaData rowsMD,
+                              ResultSet rows,
+                              int row,
+                              int col) throws SQLException {
             var columnName = rowsMD.getColumnName(col);
             var columnValue = rows.getString(col);
             var piiClassO = cx.classify(columnValue, tableName, columnName);
             var piiClfnO = piiClassO.stream();
-            piiClfnO.forEach(piiClfn -> {
-                Classifier piiCx = piiClfn.classifier();
-                String newValue = piiCx.generateString(row,columnName);
-                log.finer("Updating string [" + tableName + "].[" + columnName + "] := [" + newValue + "]");
-                try {
-                    rows.updateString(columnName, newValue);
-                } catch (SQLException ex) {
-                    log.warning("Failed to update [" + tableName + "].[" + col + "] ");
-                    log.throwing("JDBIterator","updateString",ex);
-                }
-            });
+            piiClfnO.forEach(piiClfn ->
+                updateCell(tableName, rows, row, col, columnName, piiClfn));
+    }
+
+    private void updateCell(String tableName, ResultSet rows, int row, int col, String columnName,
+                           Classification piiClfn) {
+        Classifier piiCx = piiClfn.classifier();
+        String newValue = piiCx.generateString(row, columnName);
+        log.finer("Updating string ["
+            + tableName + "].["
+            + columnName + "] := ["
+            + newValue + "]");
+        try {
+            rows.updateString(columnName, newValue);
+        } catch (SQLException ex) {
+            log.warning("Failed to update [" + tableName + "].[" + col + "] ");
+            log.throwing("JDBIterator","updateString",ex);
+        }
     }
 
     public static boolean isStringType(int columnType) {
