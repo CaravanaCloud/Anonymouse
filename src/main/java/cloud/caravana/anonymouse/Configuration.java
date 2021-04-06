@@ -6,7 +6,8 @@ public abstract class Configuration {
 
     abstract void add(String url);
 
-    public boolean isDeclared(String cname, PIIClass piiClass){
+    public boolean isDeclared(String cname,
+                                    PIIClass piiClass) {
         return getPIIClass(cname).equals(piiClass);
     }
 }

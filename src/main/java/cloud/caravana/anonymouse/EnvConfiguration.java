@@ -2,9 +2,14 @@ package cloud.caravana.anonymouse;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
 import javax.sql.DataSource;
 
-public class EnvConfiguration extends BaseConfiguration{
+@ApplicationScoped
+public class EnvConfiguration extends BaseConfiguration {
+
+    @Produces
     public DataSource getDataSource() {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(getJDBCUrl());
