@@ -4,6 +4,9 @@ Prevent data leaks from test environments by erasing all Personally Identifiable
 
 # Current Status
 
+![jacoco coverage](https://s3-us-west-2.amazonaws.com/anonymouse.caravana.cloud/badges/jacoco.svg)
+
+
 Initial proof of concept.
 Uses JDBC Metadata API to iterate on the database (full scan) and replace all values classified as PII.
 
