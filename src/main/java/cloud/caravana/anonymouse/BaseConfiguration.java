@@ -32,23 +32,26 @@ public class BaseConfiguration extends Configuration{
             return;
         }
         if (URL.startsWith("classpath:")) {
-            var resource = URL.split(":")[1];
-            try (
-                var istream = this.getClass()
-                                  .getResourceAsStream(resource)
-            ) {
-                if (istream != null) {
-                    var yaml = new Yaml();
-                    var cfgMap = (Map<String, Object>) yaml.load(istream);
-                    cfgMap.forEach(this::addRoot);
-                } else {
-                    log.warning("Failed to load config [%s]".formatted(URL));
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            addFromURL(URL);
         } else {
             throw new IllegalArgumentException();
+        }
+    }
+
+    private void addFromURL(String URL) {
+        var resource = URL.split(":")[1];
+        try (
+            var istream = getClass().getResourceAsStream(resource)
+        ) {
+            if (istream != null) {
+                var yaml = new Yaml();
+                var cfgMap = (Map<String, Object>) yaml.load(istream);
+                cfgMap.forEach(this::addRoot);
+            } else {
+                log.warning("Failed to load config [%s]".formatted(URL));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

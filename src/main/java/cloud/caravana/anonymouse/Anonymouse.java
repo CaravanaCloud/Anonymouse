@@ -12,7 +12,7 @@ public class Anonymouse {
     @Inject
     JDBCIterator dbIterator;
 
-    public void run() {
+    public final void run() {
         dbIterator.run();
     }
 }
