@@ -5,7 +5,7 @@ Prevent data leaks from test environments by erasing all Personally Identifiable
 # Current Status
 
 ![Maven Build](https://github.com/CaravanaCloud/Anonymouse/workflows/Maven-Build/badge.svg)
-![JaCoCo coverage](https://s3-us-west-2.amazonaws.com/anonymouse.caravana.cloud/badges/jacoco.svg)
+[![JaCoCo coverage](https://s3-us-west-2.amazonaws.com/anonymouse.caravana.cloud/badges/jacoco.svg)](https://s3-us-west-2.amazonaws.com/anonymouse.caravana.cloud/jacoco/index.html)
 ![GitHub Super-Linter](https://github.com/CaravanaCloud/Anonymouse/workflows/Super-Linter/badge.svg)
 
 
@@ -39,5 +39,5 @@ https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.199.pdf
 
 # Automated Reports
 
-Jacoco: https://s3-us-west-2.amazonaws.com/anonymouse.caravana.cloud/index.html
+Jacoco: https://s3-us-west-2.amazonaws.com/anonymouse.caravana.cloud/jacoco/index.html
 
