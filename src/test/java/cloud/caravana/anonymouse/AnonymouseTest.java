@@ -102,34 +102,39 @@ public class AnonymouseTest {
     }
 
     private boolean hasPII(PIIClass piiClass, String tbl, String col) {
-        var sql = format("SELECT %s FROM %s",col,tbl);
+        var sql = format("SELECT %s FROM %s", col, tbl);
         var rows = queryForList(sql);
-        boolean hasPII = rows.stream().anyMatch(row -> isPII(tbl, col, row, piiClass));
+        boolean hasPII = rows.stream()
+                             .anyMatch(row -> isPII(tbl, col, row, piiClass));
         return hasPII;
     }
 
     private List<String> queryForList(String sql) {
         var result = new ArrayList<String>();
-        try(var conn = config.getDataSource().getConnection()){
-            var rs = conn.createStatement().executeQuery(sql);
-            while (rs.next()) result.add(rs.getString(1));
+        try (var conn = config.getDataSource()
+                              .getConnection()) {
+            var rs = conn.createStatement()
+                         .executeQuery(sql);
+            while (rs.next()) {
+                result.add(rs.getString(1));
+            }
         } catch (SQLException ex) {
-            fail(ex.getMessage(),ex);
+            fail(ex.getMessage(), ex);
         }
         logger.info(result.toString());
         return result;
     }
 
     private boolean hasPhonedCustomer() {
-        return hasPII(Telephone, "CUSTOMER","cus_phone");
+        return hasPII(Telephone, "CUSTOMER", "cus_phone");
     }
 
     private boolean hasBDayCustomer() {
-        return hasPII(BirthDate, "CUSTOMER","cus_bday");
+        return hasPII(BirthDate, "CUSTOMER", "cus_bday");
     }
 
     private boolean hasNamedCustomer() {
-        return hasPII(FullName, "CUSTOMER","cus_name");
+        return hasPII(FullName, "CUSTOMER", "cus_name");
     }
 
     private boolean isPIIName(String tbl, String col, String value) {
@@ -139,8 +144,8 @@ public class AnonymouseTest {
     private boolean isPII(String tbl, String col, String value, PIIClass piiClass) {
         var cn = cx.classify(value, tbl, col);
         boolean cnMatch = cn.isPresent() && cn.get()
-                                        .piiClass()
-                                        .equals(piiClass);
+                                              .piiClass()
+                                              .equals(piiClass);
         return cnMatch;
     }
 }
