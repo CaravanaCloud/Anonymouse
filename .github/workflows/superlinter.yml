@@ -27,5 +27,6 @@ jobs:
           VALIDATE_SQL: false
           OUTPUT_FORMAT: tap
           OUTPUT_FOLDER: target/super-linter
+
       - name: Check super linter report
         run: find .
