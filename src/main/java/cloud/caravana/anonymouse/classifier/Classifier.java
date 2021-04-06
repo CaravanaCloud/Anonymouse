@@ -27,9 +27,11 @@ public class Classifier {
         return PIIClass.OtherPII.by(this);
     }
 
-    Optional<Classification> ifDeclared(String value, PIIClass target, String[] context) {
-        if ((value != null) &&
-            (!isAnonymized(value))) {
+    Optional<Classification> ifDeclared(String value,
+                                        PIIClass target,
+                                        String[] context) {
+        if ((value != null)
+            && (!isAnonymized(value))) {
             var cname = cname(context);
             boolean isTargeted = cfg.isDeclared(cname, target);
             if (isTargeted) {

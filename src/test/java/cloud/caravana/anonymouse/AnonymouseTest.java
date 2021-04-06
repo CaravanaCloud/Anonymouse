@@ -141,7 +141,10 @@ public class AnonymouseTest {
         return isPII(tbl, col, value, PIIClass.FullName);
     }
 
-    private boolean isPII(String tbl, String col, String value, PIIClass piiClass) {
+    private boolean isPII(String tbl,
+                          String col,
+                          String value,
+                          PIIClass piiClass) {
         var cn = cx.classify(value, tbl, col);
         boolean cnMatch = cn.isPresent() && cn.get()
                                               .piiClass()

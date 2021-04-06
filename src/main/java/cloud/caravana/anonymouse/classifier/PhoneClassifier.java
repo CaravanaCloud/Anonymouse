@@ -9,7 +9,8 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class PhoneClassifier extends Classifier {
     @Override
-    public Optional<Classification> classify(String value, String... context){
+    public Optional<Classification> classify(String value,
+                                             String... context) {
         return ifDeclared(value, Telephone, context);
     }
 

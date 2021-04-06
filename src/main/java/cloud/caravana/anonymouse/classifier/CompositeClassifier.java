@@ -8,14 +8,14 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 @ApplicationScoped
-public class CompositeClassifier extends Classifier{
+public class CompositeClassifier extends Classifier {
     List<Classifier> classifiers = new ArrayList<>();
 
     @Inject
     public CompositeClassifier(
         NameClassifier names,
         PhoneClassifier phones,
-        BirthDateClassifier bdates){
+        BirthDateClassifier bdates) {
         classifiers.add(names);
         classifiers.add(phones);
         classifiers.add(bdates);
@@ -25,7 +25,7 @@ public class CompositeClassifier extends Classifier{
     public Optional<Classification> classify(String value, String... context) {
         var result =
             classifiers.stream()
-                       .map(cx -> cx.classify(value,context))
+                       .map(cx -> cx.classify(value, context))
                        .filter(Optional::isPresent)
                        .findFirst()
                        .orElseGet(Optional::empty);
