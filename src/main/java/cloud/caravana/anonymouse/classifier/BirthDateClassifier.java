@@ -44,7 +44,7 @@ public class BirthDateClassifier extends Classifier {
             var isBefore = val.before(anonCal);
             return isBefore;
         } catch (ParseException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return true;
         }
     }

@@ -24,6 +24,7 @@ jobs:
       - name: Generate JaCoCo Badge
         id: jacoco
         uses: cicirello/jacoco-badge-generator@v2.0.1
+        if: hashFiles('./target/jacoco-report/jacoco.csv') != ''
         with:
           jacoco-csv-file: ./target/jacoco-report/jacoco.csv
       - name: Configure AWS credentials
