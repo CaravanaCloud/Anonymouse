@@ -67,8 +67,12 @@ public class JDBCIterator {
                 updateCell(tableName, rows, row, col, columnName, piiClfn));
     }
 
-    private void updateCell(String tableName, ResultSet rows, int row, int col, String columnName,
-                           Classification piiClfn) {
+    private void updateCell(String tableName,
+                            ResultSet rows,
+                            int row,
+                            int col,
+                            String columnName,
+                            Classification piiClfn) {
         Classifier piiCx = piiClfn.classifier();
         String newValue = piiCx.generateString(row, columnName);
         log.finer("Updating string ["
@@ -102,7 +106,6 @@ public class JDBCIterator {
         }
     }
 
-
     private boolean isSkippedTable(ResultSet rs)
         throws SQLException {
         var table = Table.of(rs);
@@ -126,8 +129,8 @@ public class JDBCIterator {
     }
 
     private void ping() throws SQLException {
-        try(var conn = ds.getConnection();
-            var stmt = conn.createStatement()){
+        try (var conn = ds.getConnection();
+            var stmt = conn.createStatement()) {
             stmt.executeQuery("SELECT 1+1");
         }
     }
