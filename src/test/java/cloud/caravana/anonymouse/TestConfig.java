@@ -36,17 +36,15 @@ public class TestConfig extends BaseConfiguration {
     }
 
     public Flyway getFlyway(String... locations) {
-        Flyway flyway = Flyway.configure()
-                              .dataSource(getDataSource())
-                              .locations(locations)
-                              .load();
-        return flyway;
+        return Flyway.configure()
+                     .dataSource(getDataSource())
+                     .locations(locations)
+                     .load();
     }
 
-    public Flyway migrate(String... ls) {
+    public void migrate(String... ls) {
         Flyway flyway = getFlyway(ls);
         flyway.clean();
         flyway.migrate();
-        return flyway;
     }
 }

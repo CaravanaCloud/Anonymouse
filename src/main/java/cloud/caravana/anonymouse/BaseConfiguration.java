@@ -45,6 +45,7 @@ public class BaseConfiguration extends Configuration {
         ) {
             if (istream != null) {
                 var yaml = new Yaml();
+                @SuppressWarnings("unchecked")
                 var cfgMap = (Map<String, Object>) yaml.load(istream);
                 cfgMap.forEach(this::addRoot);
             } else {
@@ -57,6 +58,7 @@ public class BaseConfiguration extends Configuration {
 
     private void addRoot(final String key, final Object value) {
         if (value instanceof Map) {
+            @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) value;
             map.forEach((ckey, cvalue) ->
                 addChild(key, ckey, cvalue.toString()));
