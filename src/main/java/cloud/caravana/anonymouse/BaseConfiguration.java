@@ -10,24 +10,24 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import org.yaml.snakeyaml.Yaml;
 
-@SuppressWarnings({"unchecked","preview"})
 @ApplicationScoped
 @Default
-public class BaseConfiguration extends Configuration{
+public class BaseConfiguration extends Configuration {
+
     @Inject
     Logger log;
 
-    Map<String,PIIClass> piiClasses = new HashMap<>();
+    Map<String, PIIClass> piiClasses = new HashMap<>();
 
     @Produces
     @Setting("anonPrefix")
-    public String getAnonPrefix(){
+    public String getAnonPrefix() {
         return "|#|";
     }
 
     @Override
     public void add(String URL) {
-        if (URL == null){
+        if (URL == null) {
             log.warning("Cannot load null configuration URL");
             return;
         }
@@ -56,16 +56,16 @@ public class BaseConfiguration extends Configuration{
     }
 
     private void addRoot(String key, Object value) {
-        if (value instanceof Map){
-            Map<String,Object> map = (Map<String, Object>) value;
-            map.forEach((ckey,cvalue) -> addChild(key,ckey,cvalue.toString()));
+        if (value instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) value;
+            map.forEach((ckey, cvalue) -> addChild(key, ckey, cvalue.toString()));
         }
     }
 
     private void addChild(String key, String ckey, String cvalue) {
         PIIClass piiClass = PIIClass.valueOf(cvalue);
         String cname = key + "." + ckey;
-        setPIIClass(piiClass,cname);
+        setPIIClass(piiClass, cname);
     }
 
     public void setPIIClass(PIIClass piiClass, String cname) {
