@@ -3,22 +3,21 @@ package cloud.caravana.anonymouse.classifier;
 import static cloud.caravana.anonymouse.PIIClass.BirthDate;
 
 import cloud.caravana.anonymouse.Classification;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
+import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
-//TODO: Support multiple date patterns
 @ApplicationScoped
 public class BirthDateClassifier extends Classifier {
-    Calendar anonCal;
+    @Inject
+    Logger log;
 
-
-    public BirthDateClassifier() {
-        anonCal = Calendar.getInstance();
-        anonCal.setTimeInMillis(0L);
-    }
+    LocalDate startOfTime = LocalDate.of(1582, 10, 15);
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     @Override
     public Optional<Classification> classify(String value, String... context) {
@@ -27,24 +26,21 @@ public class BirthDateClassifier extends Classifier {
 
     @Override
     public String generateString(int index, String... context) {
-        var newVal = (Calendar) anonCal.clone();
-        newVal.add(Calendar.DAY_OF_YEAR, -1 * index);
-        var formatter = new SimpleDateFormat("dd/MM/yyyy");
-        var formattedDate = formatter.format(newVal.getTime());
+        LocalDate anonDate = startOfTime.minusDays(index);
+        var formattedDate = formatter.format(anonDate);
         return formattedDate;
     }
 
     @Override
     protected boolean isAnonymized(String value) {
-        var parser = new SimpleDateFormat("dd/MM/yyyy");
         try {
-            var date = parser.parse(value);
-            var val = Calendar.getInstance();
-            val.setTime(date);
-            var isBefore = val.before(anonCal);
-            return isBefore;
-        } catch (ParseException e) {
-            //e.printStackTrace();
+            var dateVal = LocalDate.parse(value,formatter);
+            var isAnonymized = dateVal.isBefore(startOfTime);
+            return isAnonymized;
+        } catch (DateTimeParseException e) {
+            log.throwing("BirthDateClassifer",
+                "isAnonymized",
+                e);
             return true;
         }
     }
