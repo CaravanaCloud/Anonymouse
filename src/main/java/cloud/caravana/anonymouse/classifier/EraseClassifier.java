@@ -1,24 +1,25 @@
 package cloud.caravana.anonymouse.classifier;
 
-import static cloud.caravana.anonymouse.PIIClass.FullName;
+import static cloud.caravana.anonymouse.PIIClass.Erase;
+import static cloud.caravana.anonymouse.PIIClass.Telephone;
 
 import cloud.caravana.anonymouse.Classification;
 import java.util.Optional;
-import javax.enterprise.context.ApplicationScoped;
 
-@ApplicationScoped
-public class NameClassifier extends Classifier {
+public class EraseClassifier extends Classifier {
     @Override
     public Optional<Classification> classify(String value,
                                              String... context) {
-        return ifDeclared(value, FullName, context);
+        return ifDeclared(value, Erase, context);
     }
 
     @Override
     public String generateString(String columnValue, int index, String... context) {
-        return anonPrefix
-            + String.join("_", context)
-            + "_"
-            + index;
+        return "";
+    }
+
+    @Override
+    protected boolean isAnonymized(String value) {
+        return "".equals(value);
     }
 }

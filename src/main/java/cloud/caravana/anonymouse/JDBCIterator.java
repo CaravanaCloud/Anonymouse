@@ -3,22 +3,30 @@ package cloud.caravana.anonymouse;
 import static java.lang.String.format;
 import static java.sql.ResultSet.CONCUR_UPDATABLE;
 import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
+import static java.sql.Types.VARCHAR;
 
 import cloud.caravana.anonymouse.classifier.Classifier;
 import cloud.caravana.anonymouse.classifier.CompositeClassifier;
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+@SuppressWarnings("CdiUnproxyableBeanTypesInspection")
 @ApplicationScoped
 public class JDBCIterator {
+
+    @Inject
+    Configuration cfg;
+
     @Inject
     Logger log;
 
@@ -28,30 +36,50 @@ public class JDBCIterator {
     @Inject
     CompositeClassifier cx;
 
-    public void runTable(String tableName) {
-        try (Connection conn = ds.getConnection()) {
-            var sql = "SELECT * FROM " + tableName;
-            var statement = conn
-                .createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_UPDATABLE);
-            var rows = statement.executeQuery(sql);
-            var rowsMD = rows.getMetaData();
-            var colCnt = rowsMD.getColumnCount();
-            var rowCnt = 0;
-            while (rows.next()) {
-                rowCnt++;
-                for (var col = 1; col <= colCnt; col++) {
-                    int columnType = rowsMD.getColumnType(col);
-                    if (isStringType(columnType)) {
-                        updateString(tableName, rowsMD, rows, rowCnt, col);
-                    }
+    ExecutorService executor;
+
+    public void runTable(Table table) {
+        var rowCnt = 0;
+        try (var conn = ds.getConnection()) {
+            var tableCat = table.tableCat();
+            var tableName = table.tableName();
+            var tableFQN = tableCat +"."+tableName;
+            log.info("Anonymizing [%s]".formatted(table.toString()));
+            var sql = "SELECT * FROM " + tableFQN;
+            try(var statement = conn
+                .createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_UPDATABLE);){
+                var rows = statement.executeQuery(sql);
+                int concurrency = rows.getConcurrency();
+                if (concurrency != ResultSet.CONCUR_UPDATABLE) {
+                    log.warning("Skipping not updatable table %s".formatted(table));
                 }
-                rows.updateRow();
+                if (table.tableName().equals("PlatformConfig")) {
+                    System.out.println("");
+                }
+                var rowsMD = rows.getMetaData();
+                var colCnt = rowsMD.getColumnCount();
+                while (rows.next()) {
+                    rowCnt++;
+                    if (rowCnt % cfg.getLogEach() == 0){
+                        System.out.println("Row [%s] Table [%s] ".formatted(rowCnt, table));
+                    }
+                    for (var col = 1; col <= colCnt; col++) {
+                        int columnType = rowsMD.getColumnType(col);
+                        if (isStringType(columnType)) {
+                            updateString(tableName, rowsMD, rows, rowCnt, col);
+                        }
+                    }
+                    rows.updateRow();
+                }
             }
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+        } catch (Exception ex) {
+            log.warning("Failed to anonymize %s".formatted(table));
+            log.throwing("JDBCIterator","runTable", ex);
         } finally {
-            log.exiting("Anonymouse", "runTable");
+            log.warning("Exiting %s".formatted(table));
+            log.exiting("JDBCIterator", "runTable");
         }
+        log.info("Anonymized [%s]rows of [%s]".formatted(rowCnt,table.toString()));
     }
 
     private void updateString(String tableName,
@@ -60,11 +88,16 @@ public class JDBCIterator {
                               int row,
                               int col) throws SQLException {
             var columnName = rowsMD.getColumnName(col);
-            var columnValue = rows.getString(col);
-            var piiClassO = cx.classify(columnValue, tableName, columnName);
-            var piiClfnO = piiClassO.stream();
-            piiClfnO.forEach(piiClfn ->
-                updateCell(tableName, rows, row, col, columnName, piiClfn));
+            var columnType = rowsMD.getColumnType(col);
+            if (isStringType(columnType)) {
+                var columnValue = rows.getString(col);
+                var piiClassO = cx.classify(columnValue, tableName, columnName);
+                var piiClfnO = piiClassO.stream();
+                piiClfnO.forEach(piiClfn ->
+                    updateCell(tableName, rows, row, col, columnName, columnValue, piiClfn));
+            }else{
+                log.warning("Can't update column type: "+columnType);
+            }
     }
 
     private void updateCell(String tableName,
@@ -72,9 +105,10 @@ public class JDBCIterator {
                             int row,
                             int col,
                             String columnName,
+                            String columnValue,
                             Classification piiClfn) {
         Classifier piiCx = piiClfn.classifier();
-        String newValue = piiCx.generateString(row, columnName);
+        String newValue = piiCx.generateString(columnValue, row, columnName);
         log.finer("Updating string ["
             + tableName + "].["
             + columnName + "] := ["
@@ -88,44 +122,75 @@ public class JDBCIterator {
     }
 
     public static boolean isStringType(int columnType) {
-        return columnType == Types.VARCHAR;
+        boolean isString = columnType == VARCHAR;
+        return isString;
     }
 
     public void runTables() throws Exception {
-        try (Connection conn = ds.getConnection()) {
+        try (var conn = ds.getConnection()) {
             DatabaseMetaData dbmd = conn.getMetaData();
             ResultSet rs = dbmd.getTables(null, null, null, null);
             while (rs.next()) {
-                if (!isSkippedTable(rs)) {
-                    String tableName = rs.getString("TABLE_NAME");
-                    runTable(tableName);
-                }
+                var table = Table.of(rs);
+                if (!isSkippedTable(table))
+                    executor.submit( () -> runTable(table) );
             }
         } finally {
             log.exiting("Anonymouse", "runTables");
         }
     }
 
-    private boolean isSkippedTable(ResultSet rs)
+    private boolean isSkippedTable(Table table)
         throws SQLException {
-        var table = Table.of(rs);
-        boolean skip = "INFORMATION_SCHEMA"
-            .equalsIgnoreCase(table.tableSchem());
-        skip |= "FLYWAY_SCHEMA_HISTORY".equalsIgnoreCase(table.tableName());
+        if ("SYSTEM TABLE".equalsIgnoreCase(table.tableType())) return true;
+        if ("INFORMATION_SCHEMA".equalsIgnoreCase(table.tableSchem())) return true;
+        if ("INFORMATION_SCHEMA".equalsIgnoreCase(table.tableCat())) return true;
+        if ("SYS".equalsIgnoreCase(table.tableCat())) return true;
+        String tableName = table.tableName();
+        if ("FLYWAY_SCHEMA_HISTORY".equalsIgnoreCase(tableName)) return true;
+        boolean skip = cfg.isDeclared(tableName, PIIClass.Safe);
         log.info(format("Skip [%s] Table [%s]", skip, table));
         return skip;
     }
 
     public void run() {
+        var t0 = System.currentTimeMillis();
+        executor = Executors.newWorkStealingPool();
+        var executorMonitor =
+            Executors.newSingleThreadScheduledExecutor();
+        Runnable periodicTask = () -> {
+            log.info("Executor is terminated? "+executor.isTerminated());
+            log.info("         is shut? "+executor.isShutdown());
+        };
+        executorMonitor.scheduleAtFixedRate(periodicTask, 10, 30, TimeUnit.SECONDS);
         try {
             ping();
             runTables();
+            log.fine("Iterated. Shutting executors.");
+            try {
+                executor.shutdown();
+                Integer timeout = cfg.getTimeoutMinutes();
+                if (!executor.awaitTermination(timeout, TimeUnit.MINUTES)) {
+                    log.warning("Timed out");
+                }
+            } catch (InterruptedException ie) {
+                log.warning("Interrupted out");
+                // Preserve interrupt status
+                Thread.currentThread().interrupt();
+            }finally {
+                log.warning("Shutting down");
+                executor.shutdownNow();
+                executorMonitor.shutdownNow();
+            }
+            log.fine("Executed.");
         } catch (Exception e) {
             log.info("Failed to anonymize");
             log.throwing("Anonymouse", "run", e);
             throw new RuntimeException(e);
         } finally {
-            log.fine("Database anonymized");
+            var t1 = System.currentTimeMillis();
+            var t = (t1 - t0) / 1000.0D;
+            log.fine("Done. [%1$,.4f]s".formatted(t));
         }
     }
 

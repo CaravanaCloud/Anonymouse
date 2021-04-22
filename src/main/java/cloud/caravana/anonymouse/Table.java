@@ -3,7 +3,7 @@ package cloud.caravana.anonymouse;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public record Table(
+public record Table (
     String tableCat,
     String tableSchem,
     String tableName,

@@ -56,18 +56,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <version>1.4.200</version>
-    </dependency>
-
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>8.0.23</version>
-    </dependency>
-
-    <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
       <version>7.6.0</version>
@@ -81,9 +69,23 @@
     </dependency>
 
     <dependency>
-      <groupId>com.zaxxer</groupId>
-      <artifactId>HikariCP</artifactId>
-      <version>4.0.3</version>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-orm</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-agroal</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jdbc-h2</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jdbc-mysql</artifactId>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.assertj/assertj-core -->
@@ -116,7 +118,7 @@
           </execution>
         </executions>
         <configuration>
-          <mainClass>cloud.caravana.anonymouse.Anonymouse</mainClass>
+          <mainClass>cloud.caravana.anonymouse.Main</mainClass>
         </configuration>
       </plugin>
 

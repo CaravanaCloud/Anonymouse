@@ -1,0 +1,16 @@
+Person:
+  fullName: FullName
+  telephone: Telephone
+  birthDate: BirthDate
+  email: Erase
+
+ActomEntries: Safe
+ActomEntered: Safe
+AttendanceSheetSigned: Safe
+ActomEntryChangedEvent: Safe
+schema_version: Safe
+PlatformConfig: Safe
+PostbackConfig: Safe
+Track: Safe
+TrackEnrollment: Safe
+TrackItem: Safe

@@ -13,8 +13,7 @@ import javax.inject.Inject;
 
 @ApplicationScoped
 public class BirthDateClassifier extends Classifier {
-    @Inject
-    Logger log;
+
 
     LocalDate startOfTime = LocalDate.of(1582, 10, 15);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -25,7 +24,7 @@ public class BirthDateClassifier extends Classifier {
     }
 
     @Override
-    public String generateString(int index, String... context) {
+    public String generateString(String columnValue, int index, String... context) {
         LocalDate anonDate = startOfTime.minusDays(index);
         var formattedDate = formatter.format(anonDate);
         return formattedDate;

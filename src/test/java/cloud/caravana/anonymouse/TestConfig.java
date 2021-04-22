@@ -1,43 +1,21 @@
 package cloud.caravana.anonymouse;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import io.quarkus.test.Mock;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
+import javax.inject.Inject;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 
 @Mock
 @ApplicationScoped
-public class TestConfig extends BaseConfiguration {
-
-    @Produces
-    public DataSource getDataSource() {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(getTestJDBCUrl());
-        config.setUsername(getTestJDBCUsername());
-        config.setPassword(getTestJDBCPassword());
-        return new HikariDataSource(config);
-    }
-
-    String getTestJDBCPassword() {
-        return "";
-    }
-
-
-    String getTestJDBCUsername() {
-        return "sa";
-    }
-
-
-    String getTestJDBCUrl() {
-        return "jdbc:h2:mem:test";
-    }
+public class TestConfig extends Configuration {
+    @Inject
+    DataSource defaultDS;
 
     public Flyway getFlyway(String... locations) {
         return Flyway.configure()
-                     .dataSource(getDataSource())
+                     .dataSource(defaultDS)
                      .locations(locations)
                      .load();
     }

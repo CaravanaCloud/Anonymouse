@@ -15,12 +15,12 @@ public class PhoneClassifier extends Classifier {
     }
 
     @Override
-    public String generateString(int index, String... context) {
-        return "555" + index;
+    public String generateString(String columnValue, int index, String... context) {
+        return columnValue.replaceAll("[0-9]", "5");
     }
 
     @Override
     protected boolean isAnonymized(String value) {
-        return value.startsWith("555");
+        return value.startsWith("5555");
     }
 }

@@ -8,6 +8,7 @@ public enum PIIClass {
     Telephone,
     FullName,
     Safe,
+    Erase,
     OtherPII;
 
     public Optional<Classification> by(Classifier cx) {

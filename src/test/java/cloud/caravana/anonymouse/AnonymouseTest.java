@@ -25,6 +25,9 @@ public class AnonymouseTest {
     private final Log logger = LogFactory.getLog(getClass());
 
     @Inject
+    DataSource dataSource;
+
+    @Inject
     TestConfig config;
 
     @Inject
@@ -111,7 +114,7 @@ public class AnonymouseTest {
 
     private List<String> queryForList(String sql) {
         var result = new ArrayList<String>();
-        try (var conn = config.getDataSource()
+        try (var conn = datasource
                               .getConnection()) {
             var rs = conn.createStatement()
                          .executeQuery(sql);

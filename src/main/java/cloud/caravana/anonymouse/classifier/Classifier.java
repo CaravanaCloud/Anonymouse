@@ -5,9 +5,13 @@ import cloud.caravana.anonymouse.Configuration;
 import cloud.caravana.anonymouse.PIIClass;
 import cloud.caravana.anonymouse.Setting;
 import java.util.Optional;
+import java.util.logging.Logger;
 import javax.inject.Inject;
 
+@SuppressWarnings("CdiUnproxyableBeanTypesInspection")
 public class Classifier {
+    @Inject
+    Logger log;
 
     @Inject
     Configuration cfg;
@@ -15,7 +19,6 @@ public class Classifier {
     @Inject
     @Setting("anonPrefix")
     String anonPrefix;
-
 
     String cname(String... context) {
         String cname = String.join(".", context)
@@ -41,11 +44,12 @@ public class Classifier {
         return Optional.empty();
     }
 
-    public String generateString(int index, String... context) {
+    public String generateString(String columnValue, int index, String... context) {
         return "_" + index;
     }
 
     protected boolean isAnonymized(String value) {
+        if (value == null || value.isEmpty()) return true;
         boolean isPIISafe = value.startsWith(anonPrefix);
         return isPIISafe;
     }
