@@ -15,10 +15,12 @@ public class CompositeClassifier extends Classifier {
     public CompositeClassifier(
         NameClassifier names,
         PhoneClassifier phones,
-        BirthDateClassifier bdates) {
-        classifiers.add(names);
-        classifiers.add(phones);
-        classifiers.add(bdates);
+        BirthDateClassifier bdates,
+        EraseClassifier erasure) {
+        classifiers.addAll(List.of(names,
+            phones,
+            bdates,
+            erasure));
     }
 
     @Override

@@ -5,7 +5,9 @@ import static cloud.caravana.anonymouse.PIIClass.Telephone;
 
 import cloud.caravana.anonymouse.Classification;
 import java.util.Optional;
+import javax.enterprise.context.ApplicationScoped;
 
+@ApplicationScoped
 public class EraseClassifier extends Classifier {
     @Override
     public Optional<Classification> classify(String value,

@@ -53,9 +53,6 @@ public class JDBCIterator {
                 if (concurrency != ResultSet.CONCUR_UPDATABLE) {
                     log.warning("Skipping not updatable table %s".formatted(table));
                 }
-                if (table.tableName().equals("PlatformConfig")) {
-                    System.out.println("");
-                }
                 var rowsMD = rows.getMetaData();
                 var colCnt = rowsMD.getColumnCount();
                 while (rows.next()) {
