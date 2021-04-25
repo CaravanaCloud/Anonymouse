@@ -164,8 +164,10 @@ public class JDBCIterator {
         var executorMonitor =
             Executors.newSingleThreadScheduledExecutor();
         Runnable periodicTask = () -> {
-            log.info("Executor is terminated? "+executor.isTerminated());
-            log.info("         is shut? "+executor.isShutdown());
+            log.info("JDBC ExecutorService Shutdown[%b] Terminated[%b]".formatted(
+                executor.isShutdown(),
+                executor.isTerminated()
+            ));
         };
         executorMonitor.scheduleAtFixedRate(periodicTask, 10, 30, TimeUnit.SECONDS);
         try {

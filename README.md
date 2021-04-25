@@ -1,6 +1,9 @@
 # Anonymouse
 
-Prevent data leaks from test environments by erasing all Personally Identifiable Information, but still retaining relationships and semantics for bug reproduction and forensics.
+Replaces personal identifiable information with fake data ("Julio Faerman", 09/01/1980 -> "Jhon Doe", 01/01/1501).
+
+- Prevent data leaks from test environments by erasing all Personally Identifiable Information, but still retaining relationships and semantics for bug reproduction and forensics.
+- Comply with data privacy regulations (GDPR, LGPD, ...)
 
 # Current Status
 
@@ -36,6 +39,10 @@ https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-122.pdf
 
 FIPS PUB 199: Standards for Security Categorization of Federal Information and Information Systems
 https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.199.pdf
+
+# Similar Tools
+
+[Anonimatron](https://github.com/realrolfje/anonimatron/tree/master)
 
 # Automated Reports
 
