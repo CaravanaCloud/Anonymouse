@@ -6,7 +6,7 @@ import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
 import static java.sql.Types.DATE;
 import static java.sql.Types.VARCHAR;
 
-import cloud.caravana.anonymouse.classifier.CompositeClassifier;
+import cloud.caravana.anonymouse.classifier.Classifiers;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,7 +33,7 @@ public class JDBCIterator {
     DataSource ds;
 
     @Inject
-    CompositeClassifier cx;
+    Classifiers classifiers;
 
     ExecutorService executor;
 
@@ -103,7 +103,7 @@ public class JDBCIterator {
                              ResultSet rows) throws SQLException{
         var value = rows.getDate(columnName);
         if(value != null){
-            var classification = cx.classify(value, tableName, columnName)
+            var classification = classifiers.classify(value, tableName, columnName)
                                    .map(Classification::classifier);
             if (classification.isPresent()){
                 var classifier = classification.get();
@@ -120,7 +120,7 @@ public class JDBCIterator {
                              ResultSet rows) throws SQLException{
             var columnValue = rows.getString(columnName);
             if (columnValue != null){
-                var classification = cx.classify(columnValue, tableName, columnName)
+                var classification = classifiers.classify(columnValue, tableName, columnName)
                   .map(Classification::classifier);
                 if (classification.isPresent()){
                     var classifier = classification.get();

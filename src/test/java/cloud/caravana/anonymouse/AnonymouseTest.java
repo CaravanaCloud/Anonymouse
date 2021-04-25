@@ -8,7 +8,7 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
-import cloud.caravana.anonymouse.classifier.CompositeClassifier;
+import cloud.caravana.anonymouse.classifier.Classifiers;
 import io.quarkus.test.junit.QuarkusTest;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public class AnonymouseTest {
     Anonymouse anonymouse;
 
     @Inject
-    CompositeClassifier cx;
+    Classifiers cx;
 
     private void loadTest(String migrationLoc) {
         config.migrate(migrationLoc);

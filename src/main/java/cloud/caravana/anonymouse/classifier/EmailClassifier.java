@@ -5,6 +5,7 @@ import static cloud.caravana.anonymouse.PIIClass.Erase;
 
 import cloud.caravana.anonymouse.Classification;
 import cloud.caravana.anonymouse.PIIClass;
+import java.sql.Date;
 import java.util.Optional;
 import java.util.UUID;
 import javax.enterprise.context.ApplicationScoped;
@@ -17,13 +18,13 @@ public class EmailClassifier extends Classifier<String>{
     Hashids hashids;
 
     @Override
-    public Optional<Classification> classify(Object value,
+    public Optional<Classification> classify(String value,
                                              String... context) {
         return ifDeclared(value, Email, context);
     }
 
     @Override
-    public String generate(Object columnValue, int index, String... context) {
+    public String generate(String columnValue, int index, String... context) {
         var value = columnValue.toString();
         var split = value.split("@");
         if(split.length > 1) {
@@ -38,7 +39,7 @@ public class EmailClassifier extends Classifier<String>{
     }
 
     @Override
-    protected boolean isAnonymized(Object value) {
+    protected boolean isAnonymized(String value) {
         return "".equals(value.toString());
     }
 

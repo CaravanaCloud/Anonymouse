@@ -143,7 +143,7 @@ public class Configuration {
                           final String ckey,
                           final  String cvalue) {
         PIIClass piiClass = PIIClass.valueOf(cvalue);
-        String cname = key + "." + ckey;
+        String cname = cname(key,ckey);
         setPIIClass(piiClass, cname);
     }
 
@@ -152,8 +152,14 @@ public class Configuration {
         piiClasses.put(cname.toUpperCase(), piiClass);
     }
 
-    public final PIIClass getPIIClass(final String cname) {
-        return piiClasses.get(cname.toUpperCase());
+    public final PIIClass getPIIClass(String... context) {
+        var cname = cname(context);
+        PIIClass piiClass = piiClasses.get(cname.toUpperCase());
+        return piiClass;
+    }
+
+    private String cname(String... context) {
+        return String.join(".",context);
     }
 
     public boolean isDeclared(String cname, PIIClass piiClass) {

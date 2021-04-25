@@ -16,20 +16,20 @@ public class HashidClassifier extends Classifier<String>{
     Hashids hashids;
 
     @Override
-    public Optional<Classification> classify(Object value,
+    public Optional<Classification> classify(String value,
                                              String... context) {
         return ifDeclared(value, Hashid, context);
     }
 
     @Override
-    public String generate(Object columnValue, int index, String... context) {
+    public String generate(String columnValue, int index, String... context) {
         var hashCode = (long) Math.abs(columnValue.hashCode());
         var encode = hashids.encode( hashCode);
         return encode;
     }
 
     @Override
-    protected boolean isAnonymized(Object value) {
+    protected boolean isAnonymized(String value) {
         return "".equals(value.toString());
     }
 

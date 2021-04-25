@@ -26,13 +26,11 @@ public abstract class Classifier<T> {
         return cname;
     }
 
-    public Optional<Classification> classify(Object value, String... context) {
-        return PIIClass.OtherPII.by(this);
-    }
+    public abstract Optional<Classification> classify(T value, String... context);
 
-    public abstract Object generate(Object value, int index, String... context) ;
+    public abstract T generate(T value, int index, String... context) ;
 
-    Optional<Classification> ifDeclared(Object value,
+    Optional<Classification> ifDeclared(T value,
                                         PIIClass target,
                                         String[] context) {
         if ((value != null)
@@ -46,7 +44,11 @@ public abstract class Classifier<T> {
         return Optional.empty();
     }
 
-    protected boolean isAnonymized(Object value) {
+    protected boolean isAnonymized(T value) {
         return value == null;
+    }
+
+    public Classification<T> of(PIIClass piiClass){
+        return new Classification<>(piiClass,this);
     }
 }

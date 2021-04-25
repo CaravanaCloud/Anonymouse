@@ -11,25 +11,25 @@ import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class BirthDateClassifier extends Classifier<Date> {
+public class DateTimeClassifier extends Classifier<Date> {
 
 
     LocalDate startOfTime = LocalDate.of(1582, 10, 15);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     @Override
-    public Optional<Classification> classify(Object value, String... context) {
-        return ifDeclared(value.toString(), DateTime, context);
+    public Optional<Classification> classify(Date value, String... context) {
+        return ifDeclared(value, DateTime, context);
     }
 
     @Override
-    public Date generate(Object columnValue, int index, String... context) {
+    public Date generate(Date columnValue, int index, String... context) {
         LocalDate anonDate = startOfTime.minusDays(index);
         return Date.valueOf(anonDate);
     }
 
     @Override
-    protected boolean isAnonymized(Object valueObj) {
+    protected boolean isAnonymized(Date valueObj) {
         String value = valueObj.toString();
         try {
             var dateVal = LocalDate.parse(value,formatter);

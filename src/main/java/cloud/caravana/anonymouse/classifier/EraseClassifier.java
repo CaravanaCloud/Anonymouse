@@ -10,18 +10,18 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class EraseClassifier extends Classifier<String> {
     @Override
-    public Optional<Classification> classify(Object value,
+    public Optional<Classification> classify(String value,
                                              String... context) {
         return ifDeclared(value, Erase, context);
     }
 
     @Override
-    public String generate(Object columnValue, int index, String... context) {
+    public String generate(String columnValue, int index, String... context) {
         return "";
     }
 
     @Override
-    protected boolean isAnonymized(Object value) {
+    protected boolean isAnonymized(String value) {
         return "".equals(value.toString());
     }
 }
