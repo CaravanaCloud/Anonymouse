@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 import javax.inject.Inject;
 
 @SuppressWarnings("CdiUnproxyableBeanTypesInspection")
-public class Classifier {
+public abstract class Classifier<T> {
     @Inject
     Logger log;
 
@@ -26,11 +26,13 @@ public class Classifier {
         return cname;
     }
 
-    public Optional<Classification> classify(String value, String... context) {
+    public Optional<Classification> classify(Object value, String... context) {
         return PIIClass.OtherPII.by(this);
     }
 
-    Optional<Classification> ifDeclared(String value,
+    public abstract Object generate(Object value, int index, String... context) ;
+
+    Optional<Classification> ifDeclared(Object value,
                                         PIIClass target,
                                         String[] context) {
         if ((value != null)
@@ -44,13 +46,7 @@ public class Classifier {
         return Optional.empty();
     }
 
-    public String generateString(String columnValue, int index, String... context) {
-        return "_" + index;
-    }
-
-    protected boolean isAnonymized(String value) {
-        if (value == null || value.isEmpty()) return true;
-        boolean isPIISafe = value.startsWith(anonPrefix);
-        return isPIISafe;
+    protected boolean isAnonymized(Object value) {
+        return value == null;
     }
 }

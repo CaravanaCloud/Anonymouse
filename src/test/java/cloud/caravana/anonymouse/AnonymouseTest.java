@@ -1,7 +1,7 @@
 package cloud.caravana.anonymouse;
 
 
-import static cloud.caravana.anonymouse.PIIClass.BirthDate;
+import static cloud.caravana.anonymouse.PIIClass.DateTime;
 import static cloud.caravana.anonymouse.PIIClass.FullName;
 import static cloud.caravana.anonymouse.PIIClass.Telephone;
 import static java.lang.String.format;
@@ -133,7 +133,7 @@ public class AnonymouseTest {
     }
 
     private boolean hasBDayCustomer() {
-        return hasPII(BirthDate, "CUSTOMER", "cus_bday");
+        return hasPII(DateTime, "CUSTOMER", "cus_bday");
     }
 
     private boolean hasNamedCustomer() {

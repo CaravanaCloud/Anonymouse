@@ -7,15 +7,15 @@ import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class NameClassifier extends Classifier {
+public class NameClassifier extends Classifier<String> {
     @Override
-    public Optional<Classification> classify(String value,
+    public Optional<Classification> classify(Object value,
                                              String... context) {
-        return ifDeclared(value, FullName, context);
+        return ifDeclared(value.toString(), FullName, context);
     }
 
     @Override
-    public String generateString(String columnValue, int index, String... context) {
+    public String generate(Object columnValue, int index, String... context) {
         return anonPrefix
             + String.join("_", context)
             + "_"

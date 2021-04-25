@@ -1,37 +1,36 @@
 package cloud.caravana.anonymouse.classifier;
 
-import static cloud.caravana.anonymouse.PIIClass.BirthDate;
+import static cloud.caravana.anonymouse.PIIClass.DateTime;
 
 import cloud.caravana.anonymouse.Classification;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
-import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 @ApplicationScoped
-public class BirthDateClassifier extends Classifier {
+public class BirthDateClassifier extends Classifier<Date> {
 
 
     LocalDate startOfTime = LocalDate.of(1582, 10, 15);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     @Override
-    public Optional<Classification> classify(String value, String... context) {
-        return ifDeclared(value, BirthDate, context);
+    public Optional<Classification> classify(Object value, String... context) {
+        return ifDeclared(value.toString(), DateTime, context);
     }
 
     @Override
-    public String generateString(String columnValue, int index, String... context) {
+    public Date generate(Object columnValue, int index, String... context) {
         LocalDate anonDate = startOfTime.minusDays(index);
-        var formattedDate = formatter.format(anonDate);
-        return formattedDate;
+        return Date.valueOf(anonDate);
     }
 
     @Override
-    protected boolean isAnonymized(String value) {
+    protected boolean isAnonymized(Object valueObj) {
+        String value = valueObj.toString();
         try {
             var dateVal = LocalDate.parse(value,formatter);
             var isAnonymized = dateVal.isBefore(startOfTime);

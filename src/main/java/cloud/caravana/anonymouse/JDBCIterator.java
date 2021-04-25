@@ -3,15 +3,13 @@ package cloud.caravana.anonymouse;
 import static java.lang.String.format;
 import static java.sql.ResultSet.CONCUR_UPDATABLE;
 import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
+import static java.sql.Types.DATE;
 import static java.sql.Types.VARCHAR;
 
-import cloud.caravana.anonymouse.classifier.Classifier;
 import cloud.caravana.anonymouse.classifier.CompositeClassifier;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +17,7 @@ import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import org.hibernate.JDBCException;
 
 @SuppressWarnings("CdiUnproxyableBeanTypesInspection")
 @ApplicationScoped
@@ -41,6 +40,7 @@ public class JDBCIterator {
     public void runTable(Table table) {
         var rowCnt = 0;
         try (var conn = ds.getConnection()) {
+            conn.setAutoCommit(true);
             var tableCat = table.tableCat();
             var tableName = table.tableName();
             var tableFQN = tableCat +"."+tableName;
@@ -52,75 +52,83 @@ public class JDBCIterator {
                 int concurrency = rows.getConcurrency();
                 if (concurrency != ResultSet.CONCUR_UPDATABLE) {
                     log.warning("Skipping not updatable table %s".formatted(table));
+                    return;
                 }
                 var rowsMD = rows.getMetaData();
                 var colCnt = rowsMD.getColumnCount();
                 while (rows.next()) {
                     rowCnt++;
                     if (rowCnt % cfg.getLogEach() == 0){
-                        System.out.println("Row [%s] Table [%s] ".formatted(rowCnt, table));
+                        log.info("Row [%s] Table [%s] ".formatted(rowCnt, table));
                     }
                     for (var col = 1; col <= colCnt; col++) {
                         int columnType = rowsMD.getColumnType(col);
-                        if (isStringType(columnType)) {
-                            updateString(tableName, rowsMD, rows, rowCnt, col);
+                        var columnName = rowsMD.getColumnName(col);
+                        try {
+                            visitColumn(rowCnt, tableName, rows, col, columnType, columnName);
+                        } catch (Exception e){
+                            e.printStackTrace();
+                            log.warning("Fail to visit cell ");
                         }
                     }
                     rows.updateRow();
                 }
             }
-        } catch (Exception ex) {
+        } catch (SQLException ex) {
+            ex.printStackTrace();
             log.warning("Failed to anonymize %s".formatted(table));
             log.throwing("JDBCIterator","runTable", ex);
-        } finally {
-            log.warning("Exiting %s".formatted(table));
-            log.exiting("JDBCIterator", "runTable");
         }
         log.info("Anonymized [%s]rows of [%s]".formatted(rowCnt,table.toString()));
     }
 
-    private void updateString(String tableName,
-                              ResultSetMetaData rowsMD,
-                              ResultSet rows,
-                              int row,
-                              int col) throws SQLException {
-            var columnName = rowsMD.getColumnName(col);
-            var columnType = rowsMD.getColumnType(col);
-            if (isStringType(columnType)) {
-                var columnValue = rows.getString(col);
-                var piiClassO = cx.classify(columnValue, tableName, columnName);
-                var piiClfnO = piiClassO.stream();
-                piiClfnO.forEach(piiClfn ->
-                    updateCell(tableName, rows, row, col, columnName, columnValue, piiClfn));
-            }else{
-                log.warning("Can't update column type: "+columnType);
-            }
-    }
-
-    private void updateCell(String tableName,
-                            ResultSet rows,
-                            int row,
-                            int col,
-                            String columnName,
-                            String columnValue,
-                            Classification piiClfn) {
-        Classifier piiCx = piiClfn.classifier();
-        String newValue = piiCx.generateString(columnValue, row, columnName);
-        log.finer("Updating string ["
-            + tableName + "].["
-            + columnName + "] := ["
-            + newValue + "]");
+    private void visitColumn(int rowCnt, String tableName, ResultSet rows, int col, int columnType, String columnName) {
         try {
-            rows.updateString(columnName, newValue);
+            switch (columnType) {
+                case VARCHAR -> visitString(tableName, columnName, rowCnt, rows);
+                case DATE -> visitDate(tableName, columnName, rowCnt, rows);
+                default -> log.finest("Cant handle type for column %s.%s".formatted(
+                    tableName,
+                    columnName));
+            }
         } catch (SQLException ex) {
-            log.warning("Failed to update [" + tableName + "].[" + col + "] ");
+            log.warning("Failed to update [" + tableName + "].[" + columnName + "] ");
             log.throwing("JDBIterator", "updateString", ex);
         }
     }
 
-    public static boolean isStringType(int columnType) {
-        boolean isString = columnType == VARCHAR;
-        return isString;
+    private void visitDate(String tableName,
+                             String columnName,
+                             int row,
+                             ResultSet rows) throws SQLException{
+        var value = rows.getDate(columnName);
+        if(value != null){
+            var classification = cx.classify(value, tableName, columnName)
+                                   .map(Classification::classifier);
+            if (classification.isPresent()){
+                var classifier = classification.get();
+                var newValue = classifier.generate(value, row, columnName);
+                var newString = newValue.toString();
+                rows.updateString(columnName, newString);
+            }
+        }
+    }
+
+    private void visitString(String tableName,
+                             String columnName,
+                             int row,
+                             ResultSet rows) throws SQLException{
+            var columnValue = rows.getString(columnName);
+            if (columnValue != null){
+                var classification = cx.classify(columnValue, tableName, columnName)
+                  .map(Classification::classifier);
+                if (classification.isPresent()){
+                    var classifier = classification.get();
+                    var newValue = classifier.generate(columnValue, row, columnName);
+                    var newString = newValue.toString();
+                    rows.updateString(columnName, newString);
+                }
+            }
     }
 
     public void runTables() throws Exception {

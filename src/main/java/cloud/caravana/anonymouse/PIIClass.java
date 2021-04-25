@@ -4,9 +4,11 @@ import cloud.caravana.anonymouse.classifier.Classifier;
 import java.util.Optional;
 
 public enum PIIClass {
-    BirthDate,
+    DateTime,
     Telephone,
     FullName,
+    Email,
+    Hashid,
     Safe,
     Erase,
     OtherPII;

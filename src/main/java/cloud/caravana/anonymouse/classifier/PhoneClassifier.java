@@ -7,20 +7,20 @@ import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class PhoneClassifier extends Classifier {
+public class PhoneClassifier extends Classifier<String> {
     @Override
-    public Optional<Classification> classify(String value,
+    public Optional<Classification> classify(Object value,
                                              String... context) {
-        return ifDeclared(value, Telephone, context);
+        return ifDeclared(value.toString(), Telephone, context);
     }
 
     @Override
-    public String generateString(String columnValue, int index, String... context) {
-        return columnValue.replaceAll("[0-9]", "5");
+    public String generate(Object columnValue, int index, String... context) {
+        return columnValue.toString().replaceAll("[0-9]", "5");
     }
 
     @Override
-    protected boolean isAnonymized(String value) {
-        return value.startsWith("5555");
+    protected boolean isAnonymized(Object value) {
+        return value.toString().startsWith("5555");
     }
 }

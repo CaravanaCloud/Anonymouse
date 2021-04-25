@@ -14,6 +14,7 @@ import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.hashids.Hashids;
 import org.yaml.snakeyaml.Yaml;
 
 @ApplicationScoped
@@ -28,6 +29,15 @@ public class Configuration {
 
     @ConfigProperty(name = "jdbc.log_each", defaultValue= "10000")
     Integer logEach;
+
+    @ConfigProperty(name = "hashids.salt", defaultValue= "Anonymouse")
+    String hashSalt;
+
+    @Produces
+    public Hashids produceHashid(){
+        return new Hashids(hashSalt);
+    }
+
 
 
     Map<String, PIIClass> piiClasses = new HashMap<>();

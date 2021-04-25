@@ -16,15 +16,19 @@ public class CompositeClassifier extends Classifier {
         NameClassifier names,
         PhoneClassifier phones,
         BirthDateClassifier bdates,
-        EraseClassifier erasure) {
+        EraseClassifier erasure,
+        EmailClassifier emails,
+        HashidClassifier hashes) {
         classifiers.addAll(List.of(names,
             phones,
             bdates,
-            erasure));
+            erasure,
+            emails,
+            hashes));
     }
 
     @Override
-    public Optional<Classification> classify(String value, String... context) {
+    public Optional<Classification> classify(Object value, String... context) {
         var result =
             classifiers.stream()
                        .map(cx -> cx.classify(value, context))
@@ -32,5 +36,10 @@ public class CompositeClassifier extends Classifier {
                        .findFirst()
                        .orElseGet(Optional::empty);
         return result;
+    }
+
+    @Override
+    public Object generate(Object value, int index, String... context) {
+        throw new UnsupportedOperationException();
     }
 }

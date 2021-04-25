@@ -1,27 +1,36 @@
 package cloud.caravana.anonymouse.classifier;
 
-import static cloud.caravana.anonymouse.PIIClass.Erase;
-import static cloud.caravana.anonymouse.PIIClass.Telephone;
+import static cloud.caravana.anonymouse.PIIClass.Email;
+import static cloud.caravana.anonymouse.PIIClass.Hashid;
 
 import cloud.caravana.anonymouse.Classification;
 import java.util.Optional;
+import java.util.UUID;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import org.hashids.Hashids;
 
 @ApplicationScoped
-public class EraseClassifier extends Classifier<String> {
+public class HashidClassifier extends Classifier<String>{
+    @Inject
+    Hashids hashids;
+
     @Override
     public Optional<Classification> classify(Object value,
                                              String... context) {
-        return ifDeclared(value, Erase, context);
+        return ifDeclared(value, Hashid, context);
     }
 
     @Override
     public String generate(Object columnValue, int index, String... context) {
-        return "";
+        var hashCode = (long) Math.abs(columnValue.hashCode());
+        var encode = hashids.encode( hashCode);
+        return encode;
     }
 
     @Override
     protected boolean isAnonymized(Object value) {
         return "".equals(value.toString());
     }
+
 }

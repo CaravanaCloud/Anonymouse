@@ -1,13 +1,30 @@
+PersonLL: Safe
 Person:
   fullName: FullName
   telephone: Telephone
-  birthDate: BirthDate
-  email: Erase
+  birthDate: DateTime
+  company: Hashid
+  title: Hashid
+  addressLine1: Erase
+  addressLine2: Erase
+  email: Email
+  custom1: Hashid
+  custom2: Hashid
+  custom3: Hashid
+  custom4: Hashid
+  custom5: Hashid
+  custom6: Hashid
+  custom7: Hashid
+  custom8: Hashid
+  customDate1: DateTime
+  customDate2: DateTime
 
 ActomEntries: Safe
 ActomEntered: Safe
 AttendanceSheetSigned: Safe
 ActomEntryChangedEvent: Safe
+Enrollment: Safe
+EnrollmentStateChanged: Safe
 schema_version: Safe
 PlatformConfig: Safe
 PostbackConfig: Safe
