@@ -1,20 +1,19 @@
 package cloud.caravana.anonymouse;
 
 
-import static cloud.caravana.anonymouse.PIIClass.DateTime;
-import static cloud.caravana.anonymouse.PIIClass.FullName;
-import static cloud.caravana.anonymouse.PIIClass.Telephone;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 import cloud.caravana.anonymouse.classifier.Classifiers;
-import io.quarkus.test.junit.QuarkusTest;
+import cloud.caravana.anonymouse.classifier.NameClassifier;
+import cloud.caravana.anonymouse.classifier.PhoneClassifier;
+
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import javax.inject.Inject;
 import javax.sql.DataSource;
+
+import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,10 @@ public class AnonymouseTest {
     DataSource dataSource;
 
     @Inject
-    TestConfig config;
+    Configuration config;
+
+    @Inject
+    Migrations migrations;
 
     @Inject
     DataSource datasource;
@@ -40,7 +42,7 @@ public class AnonymouseTest {
     Classifiers cx;
 
     private void loadTest(String migrationLoc) {
-        config.migrate(migrationLoc);
+        migrations.migrate(migrationLoc);
         config.add("classpath:/%s/pii_info.yaml".formatted(migrationLoc));
     }
 
@@ -104,55 +106,50 @@ public class AnonymouseTest {
         assertThat(hasBDayCustomer()).isFalse();
     }
 
-    private boolean hasPII(PIIClass piiClass, String tbl, String col) {
-        var sql = format("SELECT %s FROM %s", col, tbl);
-        var rows = queryForList(sql);
-        boolean hasPII = rows.stream()
-                             .anyMatch(row -> isPII(tbl, col, row, piiClass));
-        return hasPII;
-    }
 
-    private List<String> queryForList(String sql) {
-        var result = new ArrayList<String>();
-        try (var conn = datasource
-                              .getConnection()) {
-            var rs = conn.createStatement()
-                         .executeQuery(sql);
-            while (rs.next()) {
-                result.add(rs.getString(1));
-            }
-        } catch (SQLException ex) {
-            fail(ex.getMessage(), ex);
-        }
-        logger.info(result.toString());
-        return result;
-    }
 
     private boolean hasPhonedCustomer() {
-        return hasPII(Telephone, "CUSTOMER", "cus_phone");
+        var sql = """
+        SELECT * FROM CUSTOMER
+        WHERE cus_phone NOT LIKE '%s%%' 
+        """.formatted(PhoneClassifier.PREFIX);
+        return ! isEmpty(sql);
     }
 
     private boolean hasBDayCustomer() {
-        return hasPII(DateTime, "CUSTOMER", "cus_bday");
+        var sql = """
+        SELECT * FROM CUSTOMER
+        WHERE cus_bday > '1900-01-01' 
+        """.formatted(PhoneClassifier.PREFIX);
+        return ! isEmpty(sql);
     }
 
     private boolean hasNamedCustomer() {
-        return hasPII(FullName, "CUSTOMER", "cus_name");
+        var sql = """
+        SELECT * FROM CUSTOMER
+        WHERE cus_name NOT LIKE '%s%%' 
+        """.formatted(NameClassifier.PREFIX);
+        return ! isEmpty(sql);
     }
 
-    private boolean isPIIName(String tbl, String col, String value) {
-        return isPII(tbl, col, value, PIIClass.FullName);
+    private boolean isEmpty(String sql) {
+        try(var conn = datasource.getConnection();
+            var stmt = conn.createStatement();
+            var rs = stmt.executeQuery(sql) ){
+            if (rs.next()){
+                var name = rs.getString("cus_name");
+                var phone = rs.getString("cus_phone");
+                logger.info("Matched "+name+" "+phone);
+                return false;
+            }
+        } catch (SQLException ex) {
+            fail(ex.getMessage(),ex);
+        }
+        return true;
     }
 
-    private boolean isPII(String tbl,
-                          String col,
-                          String value,
-                          PIIClass piiClass) {
-        var cn = cx.classify(value, tbl, col);
-        boolean cnMatch = cn.isPresent() && cn.get()
-                                              .piiClass()
-                                              .equals(piiClass);
-        return cnMatch;
-    }
+
+
+
 }
 

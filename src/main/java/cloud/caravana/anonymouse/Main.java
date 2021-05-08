@@ -36,6 +36,6 @@ public class Main implements QuarkusApplication {
 
     void onStop(@Observes ShutdownEvent ev) {
         log.info("The application is stopping...");
-        System.exit(0);
+        //TODO: System.exit(0);
     }
 }

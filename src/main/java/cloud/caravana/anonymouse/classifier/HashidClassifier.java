@@ -22,7 +22,7 @@ public class HashidClassifier extends Classifier<String>{
     }
 
     @Override
-    public String generate(String columnValue, int index, String... context) {
+    public String generateString(String columnValue, int index, String... context) {
         var hashCode = (long) Math.abs(columnValue.hashCode());
         var encode = hashids.encode( hashCode);
         return encode;

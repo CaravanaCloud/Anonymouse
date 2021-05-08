@@ -6,8 +6,10 @@ import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
 import static java.sql.Types.DATE;
 import static java.sql.Types.VARCHAR;
 
+import cloud.caravana.anonymouse.classifier.Classifier;
 import cloud.caravana.anonymouse.classifier.Classifiers;
 import java.sql.DatabaseMetaData;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.ExecutorService;
@@ -43,7 +45,7 @@ public class JDBCIterator {
             conn.setAutoCommit(true);
             var tableCat = table.tableCat();
             var tableName = table.tableName();
-            var tableFQN = tableCat +"."+tableName;
+            var tableFQN = tableName;
             log.info("Anonymizing [%s]".formatted(table.toString()));
             var sql = "SELECT * FROM " + tableFQN;
             try(var statement = conn
@@ -106,10 +108,10 @@ public class JDBCIterator {
             var classification = classifiers.classify(value, tableName, columnName)
                                    .map(Classification::classifier);
             if (classification.isPresent()){
-                var classifier = classification.get();
-                var newValue = classifier.generate(value, row, columnName);
-                var newString = newValue.toString();
-                rows.updateString(columnName, newString);
+                Classifier<Date> classifier = classification.get();
+                var utilDate = classifier.generateDate(value, row, columnName);
+                var sqlDate = new Date(utilDate.getTime());
+                rows.updateDate(columnName, sqlDate);
             }
         }
     }
@@ -118,15 +120,17 @@ public class JDBCIterator {
                              String columnName,
                              int row,
                              ResultSet rows) throws SQLException{
+            if (columnName.equals("cus_phone")){
+                System.out.println("");
+            }
             var columnValue = rows.getString(columnName);
             if (columnValue != null){
                 var classification = classifiers.classify(columnValue, tableName, columnName)
                   .map(Classification::classifier);
                 if (classification.isPresent()){
-                    var classifier = classification.get();
-                    var newValue = classifier.generate(columnValue, row, columnName);
-                    var newString = newValue.toString();
-                    rows.updateString(columnName, newString);
+                    Classifier<String> classifier = classification.get();
+                    var newValue = classifier.generateString(columnValue, row, columnName);
+                    rows.updateString(columnName, newValue);
                 }
             }
     }

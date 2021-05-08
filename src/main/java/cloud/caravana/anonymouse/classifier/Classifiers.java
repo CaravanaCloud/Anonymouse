@@ -31,7 +31,13 @@ public class Classifiers {
         if (piiClass != null){
             Classifier classifier = classifierOf(piiClass);
             if (classifier != null){
-                return Optional.of(classifier.of(piiClass));
+                try {
+                    Classification classification = Classification.of(piiClass, classifier);
+                    return Optional.of(classification);
+                }catch (Exception ex) {
+                    ex.printStackTrace();
+                    throw new RuntimeException(ex);
+                }
             }
         }
         return Optional.empty();

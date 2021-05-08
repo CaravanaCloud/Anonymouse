@@ -16,7 +16,7 @@ public class EraseClassifier extends Classifier<String> {
     }
 
     @Override
-    public String generate(String columnValue, int index, String... context) {
+    public String generateString(String columnValue, int index, String... context) {
         return "";
     }
 
