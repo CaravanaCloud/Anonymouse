@@ -3,7 +3,9 @@ package cloud.caravana.anonymouse.classifier;
 import static cloud.caravana.anonymouse.PIIClass.DateTime;
 
 import cloud.caravana.anonymouse.Classification;
-import java.sql.Date;
+
+import java.time.ZoneId;
+import java.util.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -13,7 +15,7 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class DateTimeClassifier extends Classifier<Date> {
 
-
+    ZoneId defaultZoneId = ZoneId.systemDefault();
     LocalDate startOfTime = LocalDate.of(1582, 10, 15);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -23,9 +25,9 @@ public class DateTimeClassifier extends Classifier<Date> {
     }
 
     @Override
-    public Date generate(Date columnValue, int index, String... context) {
+    public Date generateDate(Date columnValue, int index, String... context) {
         LocalDate anonDate = startOfTime.minusDays(index);
-        return Date.valueOf(anonDate);
+        return Date.from(anonDate.atStartOfDay(defaultZoneId).toInstant());
     }
 
     @Override

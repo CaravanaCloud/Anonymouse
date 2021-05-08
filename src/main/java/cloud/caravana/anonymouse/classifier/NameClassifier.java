@@ -8,6 +8,8 @@ import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class NameClassifier extends Classifier<String> {
+    public static final String PREFIX = "|#| ";
+
     @Override
     public Optional<Classification> classify(String value,
                                              String... context) {
@@ -15,10 +17,16 @@ public class NameClassifier extends Classifier<String> {
     }
 
     @Override
-    public String generate(String columnValue, int index, String... context) {
-        return anonPrefix
-            + String.join("_", context)
-            + "_"
-            + index;
+    public String generateString(String columnValue, int index, String... context) {
+        String newName = PREFIX
+                + String.join("_", context)
+                + "_"
+                + index;
+        return newName;
+    }
+
+    @Override
+    protected boolean isAnonymized(String value) {
+        return value.startsWith(PREFIX);
     }
 }

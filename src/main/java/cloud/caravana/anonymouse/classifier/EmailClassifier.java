@@ -24,7 +24,7 @@ public class EmailClassifier extends Classifier<String>{
     }
 
     @Override
-    public String generate(String columnValue, int index, String... context) {
+    public String generateString(String columnValue, int index, String... context) {
         var value = columnValue.toString();
         var split = value.split("@");
         if(split.length > 1) {

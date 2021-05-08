@@ -8,6 +8,9 @@ import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class PhoneClassifier extends Classifier<String> {
+
+    public static final String PREFIX = "5555";
+
     @Override
     public Optional<Classification> classify(String value,
                                              String... context) {
@@ -15,12 +18,13 @@ public class PhoneClassifier extends Classifier<String> {
     }
 
     @Override
-    public String generate(String columnValue, int index, String... context) {
-        return columnValue.toString().replaceAll("[0-9]", "5");
+    public String generateString(String columnValue, int index, String... context) {
+        var newPhone = columnValue.toString().replaceAll(".", "5");
+        return newPhone;
     }
 
     @Override
     protected boolean isAnonymized(String value) {
-        return value.toString().startsWith("5555");
+        return value.toString().startsWith(PREFIX);
     }
 }

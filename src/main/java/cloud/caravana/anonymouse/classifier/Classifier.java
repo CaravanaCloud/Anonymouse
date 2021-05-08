@@ -4,6 +4,8 @@ import cloud.caravana.anonymouse.Classification;
 import cloud.caravana.anonymouse.Configuration;
 import cloud.caravana.anonymouse.PIIClass;
 import cloud.caravana.anonymouse.Setting;
+
+import java.util.Date;
 import java.util.Optional;
 import java.util.logging.Logger;
 import javax.inject.Inject;
@@ -16,10 +18,6 @@ public abstract class Classifier<T> {
     @Inject
     Configuration cfg;
 
-    @Inject
-    @Setting("anonPrefix")
-    String anonPrefix;
-
     String cname(String... context) {
         String cname = String.join(".", context)
                              .toUpperCase();
@@ -28,9 +26,15 @@ public abstract class Classifier<T> {
 
     public abstract Optional<Classification> classify(T value, String... context);
 
-    public abstract T generate(T value, int index, String... context) ;
+    public String generateString(String value, int index, String... context){
+        return null;
+    }
 
-    Optional<Classification> ifDeclared(T value,
+    public Date generateDate(Date value, int index, String... context){
+        return null;
+    }
+
+    public Optional<Classification> ifDeclared(T value,
                                         PIIClass target,
                                         String[] context) {
         if ((value != null)
@@ -48,7 +52,4 @@ public abstract class Classifier<T> {
         return value == null;
     }
 
-    public Classification<T> of(PIIClass piiClass){
-        return new Classification<>(piiClass,this);
-    }
 }

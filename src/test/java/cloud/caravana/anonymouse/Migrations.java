@@ -7,9 +7,8 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 
-@Mock
 @ApplicationScoped
-public class TestConfig extends Configuration {
+public class Migrations {
     @Inject
     DataSource defaultDS;
 

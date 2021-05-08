@@ -10,20 +10,14 @@
 
   <name>anonymouse</name>
 
-  <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.4.4</version>
-    <relativePath/>
-  </parent>
-
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>16</java.version>
     <maven.compiler.source>16</maven.compiler.source>
     <maven.compiler.target>16</maven.compiler.target>
-    <quarkus.platform.version>1.13.0.Final</quarkus.platform.version>
+    <quarkus.platform.version>1.13.3.Final</quarkus.platform.version>
     <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+    <skipTests>true</skipTests>
   </properties>
 
   <dependencyManagement>
@@ -136,6 +130,8 @@
               <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
               <maven.home>${maven.home}</maven.home>
             </systemPropertyVariables>
+          <skipTests>${skipTests}</skipTests>
+
           <includes>
             <include>**/*Test.java</include>
           </includes>
@@ -158,10 +154,7 @@
         <configuration>
           <source>16</source>
           <target>16</target>
-          <compilerArgs>
-            <arg>--enable-preview</arg>
-            <arg>-Xlint:all</arg>
-          </compilerArgs>
+          <compilerArgs>--enable-preview</compilerArgs>
         </configuration>
       </plugin>
 
@@ -198,6 +191,22 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>16</source>
+          <target>16</target>
+        </configuration>
+      </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <source>16</source>
+                <target>16</target>
+            </configuration>
+        </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
