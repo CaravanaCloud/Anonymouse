@@ -10,11 +10,14 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
+import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 @ApplicationScoped
 public class DateTimeClassifier extends Classifier<Date> {
-
+    @Inject
+    Logger log;
     ZoneId defaultZoneId = ZoneId.systemDefault();
     LocalDate startOfTime = LocalDate.of(1582, 10, 15);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");

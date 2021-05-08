@@ -73,7 +73,12 @@ public class JDBCIterator {
                             log.warning("Fail to visit cell ");
                         }
                     }
-                    rows.updateRow();
+                    try {
+                        rows.updateRow();
+                    } catch (SQLException ex){
+                        ex.printStackTrace();
+                        log.warning("Fail to update row  ");
+                    }
                 }
             }
         } catch (SQLException ex) {
@@ -120,9 +125,6 @@ public class JDBCIterator {
                              String columnName,
                              int row,
                              ResultSet rows) throws SQLException{
-            if (columnName.equals("cus_phone")){
-                System.out.println("");
-            }
             var columnValue = rows.getString(columnName);
             if (columnValue != null){
                 var classification = classifiers.classify(columnValue, tableName, columnName)
@@ -130,7 +132,9 @@ public class JDBCIterator {
                 if (classification.isPresent()){
                     Classifier<String> classifier = classification.get();
                     var newValue = classifier.generateString(columnValue, row, columnName);
-                    rows.updateString(columnName, newValue);
+                    if (! columnValue.equals(newValue)){
+                        rows.updateString(columnName, newValue);
+                    }
                 }
             }
     }

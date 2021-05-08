@@ -8,6 +8,7 @@ public enum PIIClass {
     Telephone,
     FullName,
     Email,
+    CPF,
     Hashid,
     Safe,
     Erase,

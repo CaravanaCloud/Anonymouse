@@ -1,10 +1,10 @@
-PersonLL: Truncate
 Person:
   fullName: FullName
   telephone: Telephone
   birthDate: DateTime
   company: Hashid
   title: Hashid
+  cpf: CPF
   addressLine1: Erase
   addressLine2: Erase
   email: Email
@@ -18,6 +18,17 @@ Person:
   custom8: Hashid
   customDate1: DateTime
   customDate2: DateTime
+
+Institution:
+  name: Hashid
+  baseURL: Hashid
+  fullName: Hashid
+
+Password:
+  username: Hashid
+  password: Hashid
+
+PersonLL: Truncate
 
 ActomEntries: Safe
 ActomEntered: Safe

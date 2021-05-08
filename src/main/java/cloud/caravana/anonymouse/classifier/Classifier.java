@@ -12,8 +12,7 @@ import javax.inject.Inject;
 
 @SuppressWarnings("CdiUnproxyableBeanTypesInspection")
 public abstract class Classifier<T> {
-    @Inject
-    Logger log;
+
 
     @Inject
     Configuration cfg;

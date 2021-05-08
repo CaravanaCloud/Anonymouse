@@ -21,6 +21,8 @@ public class Classifiers {
     HashidClassifier hashes;
     @Inject
     EmailClassifier emails;
+    @Inject
+    CPFClassifier cpf;
     
     @Inject
     Configuration cfg;
@@ -51,6 +53,7 @@ public class Classifiers {
             case Hashid: return hashes;
             case FullName: return names;
             case Telephone: return phones;
+            case CPF: return cpf;
             case OtherPII: return null;
             case Safe: return null;
             default: throw new IllegalArgumentException();
