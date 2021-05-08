@@ -11,7 +11,9 @@ public enum PIIClass {
     Hashid,
     Safe,
     Erase,
+    Truncate,
     OtherPII;
+
 
     public Optional<Classification> by(Classifier cx) {
         return Optional.of(new Classification(this, cx));

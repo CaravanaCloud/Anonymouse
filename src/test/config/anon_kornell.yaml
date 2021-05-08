@@ -1,4 +1,4 @@
-PersonLL: Safe
+PersonLL: Truncate
 Person:
   fullName: FullName
   telephone: Telephone

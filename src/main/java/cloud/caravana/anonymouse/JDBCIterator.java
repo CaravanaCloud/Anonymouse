@@ -141,12 +141,34 @@ public class JDBCIterator {
             ResultSet rs = dbmd.getTables(null, null, null, null);
             while (rs.next()) {
                 var table = Table.of(rs);
-                if (!isSkippedTable(table))
-                    executor.submit( () -> runTable(table) );
+                if (isTruncate(table)){
+                    truncate(table);
+                }else if (!isSkippedTable(table)) {
+                    executor.submit( () -> runTable(table));
+                } else {
+                    log.fine("Skipping %s".formatted(table));
+                }
             }
         } finally {
             log.exiting("Anonymouse", "runTables");
         }
+    }
+
+    private void truncate(Table table) {
+        var sql = "TRUNCATE TABLE %s".formatted(table.tableName());
+        try (var conn = ds.getConnection();
+             var stmt = conn.createStatement()) {
+            var upCount = stmt.executeUpdate(sql);
+            log.info("Truncated [%d] %s".formatted(upCount, table));
+        }catch (SQLException ex){
+            log.warning("Failed to truncate %s".formatted(table));
+        }
+    }
+
+    private boolean isTruncate(Table table) {
+        String tableName = table.tableName();
+        boolean truncate = cfg.isDeclared(tableName, PIIClass.Truncate);
+        return truncate;
     }
 
     private boolean isSkippedTable(Table table)
