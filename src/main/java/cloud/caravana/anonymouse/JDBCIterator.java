@@ -199,19 +199,19 @@ public class JDBCIterator {
         try {
             ping();
             runTables();
-            log.fine("Iterated. Shutting executors.");
+            log.fine("Database iterated. Shutting executors.");
             try {
                 executor.shutdown();
                 Integer timeout = cfg.getTimeoutMinutes();
                 if (!executor.awaitTermination(timeout, TimeUnit.MINUTES)) {
-                    log.warning("Timed out");
+                    log.warning("Executor shutdown timed out");
                 }
             } catch (InterruptedException ie) {
-                log.warning("Interrupted out");
+                log.warning("Executor shutdown interrupted");
                 // Preserve interrupt status
                 Thread.currentThread().interrupt();
             }finally {
-                log.warning("Shutting down");
+                log.info("Shutting down NOW");
                 executor.shutdownNow();
                 executorMonitor.shutdownNow();
             }
@@ -223,7 +223,7 @@ public class JDBCIterator {
         } finally {
             var t1 = System.currentTimeMillis();
             var t = (t1 - t0) / 1000.0D;
-            log.fine("Done. [%1$,.4f]s".formatted(t));
+            log.info("Database anonymized. Took [%1$,.4f]s".formatted(t));
         }
     }
 
