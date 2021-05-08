@@ -29,9 +29,66 @@ $ mvn exec:java
 
 Automated tests runnable with ```$ mvn test``` or in your favorite IDE.
 
+# Helpful commands
+
+## MySLQ Example
+
+### Start Container
+
+```
+export MYSQL_HOST=127.0.0.1
+export MYSQL_PORT=3334
+export MYSQL_ROOT_USERNAME=root
+export MYSQL_ROOT_PASSWORD=Masterkey321
+export MYSQL_DATABASE=sampledb
+
+docker run --rm -p $MYSQL_PORT:3306 \
+--name $MYSQL_DATABASE \
+-e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
+-e MYSQL_DATABASE=$MYSQL_DATABASE \
+-d mysql:latest
+```
+
+### Connect
+
+```
+mysql --host=$MYSQL_HOST --port=$MYSQL_PORT -uroot -p$MYSQL_ROOT_PASSWORD
+```
+
+### Load your backup
+
+```
+source dump.sql 
+```
+
+### Build Anonymouse
+
+```
+export QUARKUS_DATASOURCE_DB_KIND=mysql
+export QUARKUS_DATASOURCE_JDBC_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}
+export QUARKUS_DATASOURCE_USERNAME=$MYSQL_ROOT_USERNAME
+export QUARKUS_DATASOURCE_PASSWORD=$MYSQL_ROOT_PASSWORD
+export QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=none
+
+mvn package 
+```
+
+### Map your database 
+
+Example: https://github.com/CaravanaCloud/Anonymouse/blob/main/src/test/config/anon_kornell.yaml
+ 
+```
+export ANONYM_CONFIG=file://${PWD}/src/test/config/anon_kornell.yaml
+```
+
+### Run Anonymouse
+```
+mvn exec:java
+```
+
 # References
 
-Amazon Macie Data Classification:
+Ama``zon Macie Data Classification:
 https://docs.aws.amazon.com/pt_br/macie/latest/userguide/macie-classify-objects-pii.html
 
 NIST-80-122: Guide to Protecting the Confidentiality of Personally Identifiable Information (PII) 

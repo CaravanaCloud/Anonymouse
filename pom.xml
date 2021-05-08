@@ -8,7 +8,7 @@
   <artifactId>anonymouse</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>anonymouse</name>
+  <name>Anonymouse</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -16,6 +16,8 @@
     <maven.compiler.source>16</maven.compiler.source>
     <maven.compiler.target>16</maven.compiler.target>
     <quarkus.platform.version>1.13.3.Final</quarkus.platform.version>
+    <quarkus-plugin.version>${quarkus.platform.version}</quarkus-plugin.version>
+    <quarkus.package.type>uber-jar</quarkus.package.type>
     <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
     <skipTests>true</skipTests>
   </properties>
@@ -107,6 +109,30 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-maven-plugin</artifactId>
+        <version>${quarkus-plugin.version}</version>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+          <compilerArgs>
+            <arg>--enable-preview</arg>
+          </compilerArgs>
+          <jvmArgs>--enable-preview</jvmArgs>
+        </configuration>
+        <extensions>true</extensions>
+        <executions>
+          <execution>
+            <goals>
+              <goal>build</goal>
+              <goal>generate-code</goal>
+              <goal>generate-code-tests</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.0.0</version>
@@ -146,16 +172,6 @@
         </goals>
         <executions>
         </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>16</source>
-          <target>16</target>
-          <compilerArgs>--enable-preview</compilerArgs>
-        </configuration>
       </plugin>
 
       <plugin>
@@ -223,10 +239,6 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.22.1</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>3.0.2</version>
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
