@@ -7,6 +7,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -71,6 +73,11 @@ public class Configuration {
         return "|#|";
     }
 
+    @Produces
+    public final ExecutorService getExecutorService(){
+        return Executors.newWorkStealingPool();
+    }
+
     public final void add(final String url) {
         if (url == null) {
             log.warning("Cannot load null configuration URL");
@@ -78,6 +85,7 @@ public class Configuration {
         }
         addFromURL(url);
     }
+
 
     @SuppressWarnings("all")
     private void addFromURL(final String url) {
@@ -168,5 +176,23 @@ public class Configuration {
         return isDeclared;
     }
 
+    public void onJDBCReady(Runnable run) {
+        boolean isJDBCReady = isJDBCReady();
+        if(isJDBCReady){
+            run.run();
+        }
+    }
 
+    public boolean isJDBCReady() {
+        String quarkusURL = "" + System.getenv().get("QUARKUS_DATASOURCE_JDBC_URL");
+        return !quarkusURL.isEmpty();
+    }
+
+    public void onDDBReady(Runnable run) {
+        String anonDDB = "" + System.getenv().get("ANONYM_DDB");
+        boolean isDDBReady = !anonDDB.isEmpty();
+        if(isDDBReady){
+            run.run();
+        }
+    }
 }

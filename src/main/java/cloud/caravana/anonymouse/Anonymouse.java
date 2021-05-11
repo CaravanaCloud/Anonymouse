@@ -1,5 +1,8 @@
 package cloud.caravana.anonymouse;
 
+import cloud.caravana.anonymouse.iter.DDBIterator;
+import cloud.caravana.anonymouse.iter.JDBCIterator;
+
 import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -10,9 +13,16 @@ public class Anonymouse {
     Logger log;
 
     @Inject
-    JDBCIterator dbIterator;
+    JDBCIterator jdbcIterator;
+
+    @Inject
+    DDBIterator ddbIterator;
+
+    @Inject
+    Configuration cfg;
 
     public final void run() {
-        dbIterator.run();
+        cfg.onJDBCReady(jdbcIterator);
+        cfg.onDDBReady(ddbIterator);
     }
 }
