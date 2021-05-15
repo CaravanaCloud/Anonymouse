@@ -17,7 +17,7 @@ public class NameClassifier extends Classifier<String> {
     }
 
     @Override
-    public String generateString(String columnValue, int index, String... context) {
+    public String generateString(String columnValue, long index, String... context) {
         String newName = PREFIX
                 + String.join("_", context)
                 + "_"

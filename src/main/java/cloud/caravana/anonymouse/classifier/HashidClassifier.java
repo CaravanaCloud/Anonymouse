@@ -1,11 +1,9 @@
 package cloud.caravana.anonymouse.classifier;
 
-import static cloud.caravana.anonymouse.PIIClass.Email;
 import static cloud.caravana.anonymouse.PIIClass.Hashid;
 
 import cloud.caravana.anonymouse.Classification;
 import java.util.Optional;
-import java.util.UUID;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import org.hashids.Hashids;
@@ -22,7 +20,7 @@ public class HashidClassifier extends Classifier<String>{
     }
 
     @Override
-    public String generateString(String columnValue, int index, String... context) {
+    public String generateString(String columnValue, long index, String... context) {
         var hashCode = (long) Math.abs(columnValue.hashCode());
         var encode = hashids.encode( hashCode);
         return encode;

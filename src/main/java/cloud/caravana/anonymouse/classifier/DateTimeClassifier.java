@@ -28,7 +28,7 @@ public class DateTimeClassifier extends Classifier<Date> {
     }
 
     @Override
-    public Date generateDate(Date columnValue, int index, String... context) {
+    public Date generateDate(Date columnValue, long index, String... context) {
         LocalDate anonDate = startOfTime.minusDays(index);
         return Date.from(anonDate.atStartOfDay(defaultZoneId).toInstant());
     }

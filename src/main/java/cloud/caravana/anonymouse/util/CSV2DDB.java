@@ -22,10 +22,10 @@ import java.util.List;
 @CommandLine.Command
 public class CSV2DDB  implements Runnable, QuarkusApplication {
 
-    @ConfigProperty(name = "csv2ddb.input")
+    @ConfigProperty(name = "csv2ddb.input", defaultValue = "")
     String input;
 
-    @ConfigProperty(name = "csv2ddb.table")
+    @ConfigProperty(name = "csv2ddb.table", defaultValue = "")
     String tableName;
 
     @Override

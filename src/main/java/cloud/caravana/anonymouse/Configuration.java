@@ -23,9 +23,6 @@ import org.yaml.snakeyaml.Yaml;
 @Default
 public class Configuration {
 
-    @Inject
-    Logger log;
-
     @ConfigProperty(name = "jdbc.timeout_minutes", defaultValue= "5")
     Integer timeoutMinutes;
 
@@ -34,6 +31,14 @@ public class Configuration {
 
     @ConfigProperty(name = "hashids.salt", defaultValue= "Anonymouse")
     String hashSalt;
+
+    @ConfigProperty(name = "anonym.prefix", defaultValue= "|#|")
+    String anonPrefix;
+
+
+    public final String getAnonPrefix() {
+        return anonPrefix;
+    }
 
     @Produces
     public Hashids produceHashid(){
@@ -67,29 +72,31 @@ public class Configuration {
         return Optional.ofNullable(env.get(varName));
     }
 
-    @Produces
-    @Setting("anonPrefix")
-    public final String getAnonPrefix() {
-        return "|#|";
-    }
+
 
     @Produces
     public final ExecutorService getExecutorService(){
         return Executors.newWorkStealingPool();
     }
 
+    @Produces
+    public Logger getLogger() {
+        return Logger.getLogger("anonymouse");
+    }
+
     public final void add(final String url) {
         if (url == null) {
-            log.warning("Cannot load null configuration URL");
+            getLogger().warning("Cannot load null configuration URL");
             return;
         }
         addFromURL(url);
     }
 
 
+
     @SuppressWarnings("all")
     private void addFromURL(final String url) {
-        log.info("Loading configuration from [%s]".formatted(url));
+        getLogger().info("Loading configuration from [%s]".formatted(url));
         String[] split = url.split(":");
         var protocol = split[0];
         switch (protocol){
@@ -104,10 +111,10 @@ public class Configuration {
             try (InputStream is = url.openStream()){
                 addFromInput(is);
             }catch (IOException ex){
-                log.warning("Failed to read from url "+addr);
+                getLogger().warning("Failed to read from url "+addr);
             }
         }catch (MalformedURLException ex){
-            log.warning("Failed to parse url "+addr);
+            getLogger().warning("Failed to parse url "+addr);
         }
     }
 
@@ -130,7 +137,7 @@ public class Configuration {
             var cfgMap = (Map<String, Object>) yaml.load(istream);
             cfgMap.forEach(this::addRoot);
         } else {
-            log.warning("Failed to load config");
+            getLogger().warning("Failed to load config");
         }
     }
 
@@ -184,13 +191,16 @@ public class Configuration {
     }
 
     public boolean isJDBCReady() {
+        String anonDDB = "" + System.getenv().get("ANONYM_JDBC");
+        if ("false".equals(anonDDB))
+            return false;
         String quarkusURL = "" + System.getenv().get("QUARKUS_DATASOURCE_JDBC_URL");
         return !quarkusURL.isEmpty();
     }
 
     public void onDDBReady(Runnable run) {
         String anonDDB = "" + System.getenv().get("ANONYM_DDB");
-        boolean isDDBReady = !anonDDB.isEmpty();
+        boolean isDDBReady = "true".equals(anonDDB);
         if(isDDBReady){
             run.run();
         }

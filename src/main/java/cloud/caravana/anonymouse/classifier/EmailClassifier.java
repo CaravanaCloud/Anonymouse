@@ -1,11 +1,9 @@
 package cloud.caravana.anonymouse.classifier;
 
 import static cloud.caravana.anonymouse.PIIClass.Email;
-import static cloud.caravana.anonymouse.PIIClass.Erase;
 
 import cloud.caravana.anonymouse.Classification;
-import cloud.caravana.anonymouse.PIIClass;
-import java.sql.Date;
+
 import java.util.Optional;
 import java.util.UUID;
 import javax.enterprise.context.ApplicationScoped;
@@ -24,7 +22,7 @@ public class EmailClassifier extends Classifier<String>{
     }
 
     @Override
-    public String generateString(String columnValue, int index, String... context) {
+    public String generateString(String columnValue, long index, String... context) {
         var value = columnValue.toString();
         var split = value.split("@");
         if(split.length > 1) {

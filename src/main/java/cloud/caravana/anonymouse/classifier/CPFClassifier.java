@@ -3,7 +3,6 @@ package cloud.caravana.anonymouse.classifier;
 import cloud.caravana.anonymouse.Classification;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -46,7 +45,7 @@ public class CPFClassifier extends Classifier<String> {
     }
 
     @Override
-    public String generateString(String columnValue, int index, String... context) {
+    public String generateString(String columnValue, long index, String... context) {
         if (! kmap.containsKey(columnValue)) {
             var next = (String) stockCPFs.pop();
             kmap.put(columnValue,next);

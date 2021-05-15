@@ -18,7 +18,7 @@ public class PhoneClassifier extends Classifier<String> {
     }
 
     @Override
-    public String generateString(String columnValue, int index, String... context) {
+    public String generateString(String columnValue, long index, String... context) {
         var newPhone = columnValue.toString().replaceAll(".", "5");
         return newPhone;
     }

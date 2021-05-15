@@ -22,7 +22,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.sql.DataSource;
-import org.hibernate.JDBCException;
 
 @SuppressWarnings("CdiUnproxyableBeanTypesInspection")
 @ApplicationScoped
