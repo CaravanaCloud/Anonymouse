@@ -3,7 +3,6 @@ package cloud.caravana.anonymouse.iter;
 import cloud.caravana.anonymouse.Classification;
 import cloud.caravana.anonymouse.classifier.Classifier;
 import cloud.caravana.anonymouse.classifier.Classifiers;
-import com.google.errorprone.annotations.Var;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 

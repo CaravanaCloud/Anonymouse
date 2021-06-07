@@ -19,9 +19,9 @@
     <java.version>16</java.version>
     <maven.compiler.source>16</maven.compiler.source>
     <maven.compiler.target>16</maven.compiler.target>
-    <quarkus.platform.version>1.13.3.Final</quarkus.platform.version>
+    <quarkus.platform.version>1.13.6.Final</quarkus.platform.version>
     <quarkus-plugin.version>${quarkus.platform.version}</quarkus-plugin.version>
-    <awssdk.version>2.16.59</awssdk.version>
+    <awssdk.version>2.16.78</awssdk.version>
     <hashid.version>1.0.3</hashid.version>
     <opencsv.version>5.4</opencsv.version>
   </properties>
@@ -118,6 +118,7 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>dynamodb</artifactId>
+      <version>${awssdk.version}</version>
     </dependency>
 
     <dependency>
@@ -236,6 +237,8 @@
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
+          <release>16</release>
+          <compilerArgs>--enable-preview</compilerArgs>
         </configuration>
       </plugin>
 
