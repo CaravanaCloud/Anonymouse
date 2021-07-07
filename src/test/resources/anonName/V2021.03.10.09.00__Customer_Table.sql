@@ -1,5 +1,5 @@
 CREATE TABLE CUSTOMER (
-    cus_id NUMBER(38,0) CONSTRAINT cus_ID_NN NOT NULL,
+    cus_id INT CONSTRAINT cus_ID_NN NOT NULL,
     cus_name VARCHAR(50) CONSTRAINT cus_NAME_NN NOT NULL,
     cus_phone VARCHAR(50),
     cus_bday DATE
