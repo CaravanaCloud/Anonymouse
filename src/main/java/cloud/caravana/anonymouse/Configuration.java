@@ -15,6 +15,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
+
+import cloud.caravana.anonymouse.iter.JDBCIterator;
+import cloud.caravana.anonymouse.report.Report;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.hashids.Hashids;
 import org.yaml.snakeyaml.Yaml;
@@ -22,19 +25,22 @@ import org.yaml.snakeyaml.Yaml;
 @ApplicationScoped
 @Default
 public class Configuration {
-
-    @ConfigProperty(name = "jdbc.timeout_minutes", defaultValue= "5")
-    Integer timeoutMinutes;
-
-    @ConfigProperty(name = "jdbc.log_each", defaultValue= "10000")
-    Integer logEach;
-
-    @ConfigProperty(name = "hashids.salt", defaultValue= "Anonymouse")
-    String hashSalt;
+    static final String userDir = System.getProperty("user.dir");
 
     @ConfigProperty(name = "anonym.prefix", defaultValue= "|#|")
     String anonPrefix;
 
+    @ConfigProperty(name = "anonym.dryRun", defaultValue= "true")
+    Boolean dryRun;
+
+    @ConfigProperty(name = "jdbc.timeout_minutes", defaultValue= "5")
+    Integer timeoutMinutes;
+
+    @ConfigProperty(name = "jdbc.log_each", defaultValue= "1000")
+    Integer logEach;
+
+    @ConfigProperty(name = "hashids.salt", defaultValue= "Anonymouse")
+    String hashSalt;
 
     public final String getAnonPrefix() {
         return anonPrefix;
@@ -45,7 +51,9 @@ public class Configuration {
         return new Hashids(hashSalt);
     }
 
-
+    public String getUserDir(){
+        return userDir;
+    }
 
     Map<String, PIIClass> piiClasses = new HashMap<>();
 
@@ -183,19 +191,18 @@ public class Configuration {
         return isDeclared;
     }
 
-    public void onJDBCReady(Runnable run) {
-        boolean isJDBCReady = isJDBCReady();
-        if(isJDBCReady){
-            run.run();
+    public void onJDBCReady(JDBCIterator jdbcIter, Report report) {
+        if(isJDBCReady()){
+            jdbcIter.setReport(report);
+            jdbcIter.run();
         }
     }
 
     public boolean isJDBCReady() {
-        String anonDDB = "" + System.getenv().get("ANONYM_JDBC");
-        if ("false".equals(anonDDB))
+        String anonJDBC = "" + System.getenv().get("ANONYM_JDBC");
+        if ("false".equals(anonJDBC))
             return false;
-        String quarkusURL = "" + System.getenv().get("QUARKUS_DATASOURCE_JDBC_URL");
-        return !quarkusURL.isEmpty();
+        return true;
     }
 
     public void onDDBReady(Runnable run) {
@@ -204,5 +211,9 @@ public class Configuration {
         if(isDDBReady){
             run.run();
         }
+    }
+
+    public Boolean isDryRun() {
+        return dryRun;
     }
 }

@@ -9,6 +9,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static java.time.LocalDate.*;
@@ -16,7 +19,9 @@ import static java.util.stream.Collectors.toList;
 
 @StolenFrom(value = "ederign",
         link = "https://twitter.com/ederign/status/1375447652859584518")
+// https://twitter.com/faermanj/status/1391045470433292290/photo/1
 public class PracticandoLasNuevasFeatures {
+
     public static void main(String[] args) throws Exception {
         helpfulNPEs();
         localVars();
@@ -25,12 +30,29 @@ public class PracticandoLasNuevasFeatures {
         bookRecords();
         convenientCollections();
         defaultMethods();
+        executorsExecuted();
         http2ClientRocks();
         https://www.oracle.com/java/technologies/javase/jmc8-install.html
         jdkMissionControl();
         https://twitter.com/java/status/1281595701546192901
         thankYou();
+    }
 
+    private static void executorsExecuted() {
+        //TODO: ExecutorService.newVirtualThreadExecutor();
+        // var executor = Executors.newWorkStealingPool();
+        var executor = Executors.newSingleThreadScheduledExecutor();
+        for (int i = 0_0; i < 333_333; i++) {
+            executor.submit(() -> medioBesta());
+        }
+    }
+
+    private static void medioBesta() {
+        final var rand = new Random();
+        for (long j = 0; j < Long.MAX_VALUE ; j++) {
+            if (j * rand.nextInt() % 333_333 == 0)
+                System.out.println(j + " Jackpot!!!");
+        }
     }
 
     private static void convenientCollections() {
@@ -117,7 +139,7 @@ public class PracticandoLasNuevasFeatures {
         }
     }
 
-    // record TopOfMind(String anything) implements Award { }
+    //record TopOfMind(String anything) implements Award { }
 
     private static void bookRecords() {
         LocalDate now = now();
@@ -173,7 +195,7 @@ public class PracticandoLasNuevasFeatures {
         System.out.println(psql);
     }
 
-    private static void helpfulNPEs() {
-        //HelpfullNPE: NPEUtil.main(null);
+    private static void helpfulNPEs() throws Exception{
+        HelpfullNPE: NPEUtil.main(null);
     }
 }

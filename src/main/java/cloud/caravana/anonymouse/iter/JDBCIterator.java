@@ -12,15 +12,16 @@ import cloud.caravana.anonymouse.PIIClass;
 import cloud.caravana.anonymouse.Table;
 import cloud.caravana.anonymouse.classifier.Classifier;
 import cloud.caravana.anonymouse.classifier.Classifiers;
+import cloud.caravana.anonymouse.report.Report;
 
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.sql.DataSource;
 
 @SuppressWarnings("CdiUnproxyableBeanTypesInspection")
@@ -34,7 +35,7 @@ public class JDBCIterator implements Runnable {
     Logger log;
 
     @Inject
-    Provider<DataSource> dsProvider;
+    Instance<DataSource> dsProvider;
 
     @Inject
     Classifiers classifiers;
@@ -42,17 +43,23 @@ public class JDBCIterator implements Runnable {
     @Inject
     ExecutorService executor;
 
+    private Report report;
+
     public void runTable(Table table) {
-        var rowCnt = 0;
+        var rowCnt = 0L;
+        var startTime = LocalDateTime.now();
+        var success = true;
+        var errorMsg = "";
         try (var conn = getConnection()) {
             conn.setAutoCommit(true);
             var tableCat = table.tableCat();
             var tableName = table.tableName();
-            var tableFQN = tableName;
+            var tableFQN = "%s.%s".formatted(tableCat, tableName);
             log.info("Anonymizing [%s]".formatted(table.toString()));
             var sql = "SELECT * FROM " + tableFQN;
-            try(var statement = conn
-                .createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_UPDATABLE);){
+            log.info(sql);
+            try (var statement = conn
+                    .createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_UPDATABLE);) {
                 var rows = statement.executeQuery(sql);
                 int concurrency = rows.getConcurrency();
                 if (concurrency != ResultSet.CONCUR_UPDATABLE) {
@@ -63,50 +70,80 @@ public class JDBCIterator implements Runnable {
                 var colCnt = rowsMD.getColumnCount();
                 while (rows.next()) {
                     rowCnt++;
-                    if (rowCnt % cfg.getLogEach() == 0){
+                    if (rowCnt % cfg.getLogEach() == 0) {
                         log.info("Row [%s] Table [%s] ".formatted(rowCnt, table));
                     }
                     for (var col = 1; col <= colCnt; col++) {
                         int columnType = rowsMD.getColumnType(col);
                         var columnName = rowsMD.getColumnName(col);
                         try {
-                            visitColumn(rowCnt, tableName, rows, col, columnType, columnName);
-                        } catch (Exception e){
+                            visitCell(rowCnt, tableName, rows, col, columnType, columnName);
+                        } catch (Exception e) {
                             e.printStackTrace();
                             log.warning("Fail to visit cell ");
                         }
                     }
-                    try {
-                        rows.updateRow();
-                    } catch (SQLException ex){
-                        ex.printStackTrace();
-                        log.warning("Fail to update row  ");
+                    if (!cfg.isDryRun()) {
+                        try {
+                            rows.updateRow();
+                        } catch (SQLException ex) {
+                            ex.printStackTrace();
+                            log.warning("Fail to update row  ");
+                        }
                     }
                 }
             }
         } catch (SQLException ex) {
+            success = false;
+            errorMsg = ex.getMessage();
             ex.printStackTrace();
             log.warning("Failed to anonymize %s".formatted(table));
-            log.throwing("JDBCIterator","runTable", ex);
+            log.throwing("JDBCIterator", "runTable", ex);
         }
-        log.info("Anonymized [%s]rows of [%s]".formatted(rowCnt,table.toString()));
+        var endTime = LocalDateTime.now();
+        report.jdbcResult().tableResult(
+            table,
+            success,
+            errorMsg,
+            rowCnt,
+            startTime,
+            endTime
+        );
+        log.info("Anonymized [%s]rows of [%s]".formatted(rowCnt, table.toString()));
     }
+
+    private Connection tryInjected(){
+        try {
+            if (cfg.isJDBCReady() && dsProvider.isResolvable()) {
+                var ds = dsProvider.get();
+                var conn = ds.getConnection();
+                return conn;
+            }
+        }catch (SQLException e){
+            return null;
+        }
+        return null;
+    }
+
 
     private Connection getConnection() throws SQLException {
-        if (cfg.isJDBCReady()) {
-            DataSource ds = dsProvider.get();
-            return ds.getConnection();
-        }else return null;
+        Connection conn = tryInjected();
+        if (conn != null) {
+            return conn;
+        } else {
+            log.warning("Can't resolve database to connect.");
+            throw new IllegalStateException("Can't resolve datasource to connect.");
+        }
     }
 
-    private void visitColumn(int rowCnt, String tableName, ResultSet rows, int col, int columnType, String columnName) {
+    private void visitCell(Long rowCnt, String tableName, ResultSet rows, int col, int columnType, String columnName) {
         try {
             switch (columnType) {
                 case VARCHAR -> visitString(tableName, columnName, rowCnt, rows);
                 case DATE -> visitDate(tableName, columnName, rowCnt, rows);
                 default -> log.finest("Cant handle type for column %s.%s".formatted(
-                    tableName,
-                    columnName));
+                        tableName,
+                        columnName));
             }
         } catch (SQLException ex) {
             log.warning("Failed to update [" + tableName + "].[" + columnName + "] ");
@@ -115,14 +152,14 @@ public class JDBCIterator implements Runnable {
     }
 
     private void visitDate(String tableName,
-                             String columnName,
-                             int row,
-                             ResultSet rows) throws SQLException{
+                           String columnName,
+                           Long row,
+                           ResultSet rows) throws SQLException {
         var value = rows.getDate(columnName);
-        if(value != null){
+        if (value != null) {
             var classification = classifiers.classify(value, tableName, columnName)
-                                   .map(Classification::classifier);
-            if (classification.isPresent()){
+                    .map(Classification::classifier);
+            if (classification.isPresent()) {
                 Classifier<Date> classifier = classification.get();
                 var utilDate = classifier.generateDate(value, row, columnName);
                 var sqlDate = new Date(utilDate.getTime());
@@ -133,32 +170,32 @@ public class JDBCIterator implements Runnable {
 
     private void visitString(String tableName,
                              String columnName,
-                             int row,
-                             ResultSet rows) throws SQLException{
-            var columnValue = rows.getString(columnName);
-            if (columnValue != null){
-                var classification = classifiers.classify(columnValue, tableName, columnName)
-                  .map(Classification::classifier);
-                if (classification.isPresent()){
-                    Classifier<String> classifier = classification.get();
-                    var newValue = classifier.generateString(columnValue, row, columnName);
-                    if (! columnValue.equals(newValue )){
-                        rows.updateString(columnName, newValue);
-                    }
+                             Long row,
+                             ResultSet rows) throws SQLException {
+        var columnValue = rows.getString(columnName);
+        if (columnValue != null) {
+            var classification = classifiers.classify(columnValue, tableName, columnName)
+                    .map(Classification::classifier);
+            if (classification.isPresent()) {
+                Classifier<String> classifier = classification.get();
+                var newValue = classifier.generateString(columnValue, row, columnName);
+                if (!columnValue.equals(newValue)) {
+                    rows.updateString(columnName, newValue);
                 }
             }
+        }
     }
 
     public void runTables() throws Exception {
         try (var conn = getConnection()) {
             DatabaseMetaData dbmd = conn.getMetaData();
-            ResultSet rs = dbmd.getTables(null, null, null, null);
+            ResultSet rs = dbmd.getTables(null, null, null, new String[] {"TABLE"});
             while (rs.next()) {
                 var table = Table.of(rs);
-                if (isTruncate(table)){
+                if (isTruncate(table)) {
                     truncate(table);
-                }else if (!isSkippedTable(table)) {
-                    executor.submit( () -> runTable(table));
+                } else if (!isSkippedTable(table)) {
+                    runTable(table);
                 } else {
                     log.fine("Skipping %s".formatted(table));
                 }
@@ -169,13 +206,15 @@ public class JDBCIterator implements Runnable {
     }
 
     private void truncate(Table table) {
-        var sql = "TRUNCATE TABLE %s".formatted(table.tableName());
-        try (var conn = getConnection();
-             var stmt = conn.createStatement()) {
-            var upCount = stmt.executeUpdate(sql);
-            log.info("Truncated [%d] %s".formatted(upCount, table));
-        }catch (SQLException ex){
-            log.warning("Failed to truncate %s".formatted(table));
+        if (!cfg.isDryRun()) {
+            var sql = "TRUNCATE TABLE %s".formatted(table.tableName());
+            try (var conn = getConnection();
+                 var stmt = conn.createStatement()) {
+                var upCount = stmt.executeUpdate(sql);
+                log.info("Truncated [%d] %s".formatted(upCount, table));
+            } catch (SQLException ex) {
+                log.warning("Failed to truncate %s".formatted(table));
+            }
         }
     }
 
@@ -186,7 +225,7 @@ public class JDBCIterator implements Runnable {
     }
 
     private boolean isSkippedTable(Table table)
-        throws SQLException {
+            throws SQLException {
         if ("SYSTEM TABLE".equalsIgnoreCase(table.tableType())) return true;
         if ("INFORMATION_SCHEMA".equalsIgnoreCase(table.tableSchem())) return true;
         if ("INFORMATION_SCHEMA".equalsIgnoreCase(table.tableCat())) return true;
@@ -201,50 +240,34 @@ public class JDBCIterator implements Runnable {
     @Override
     public void run() {
         var t0 = System.currentTimeMillis();
-        var executorMonitor =
-            Executors.newSingleThreadScheduledExecutor();
-        Runnable periodicTask = () -> {
-            log.info("JDBC ExecutorService Shutdown[%b] Terminated[%b]".formatted(
-                executor.isShutdown(),
-                executor.isTerminated()
-            ));
-        };
-        executorMonitor.scheduleAtFixedRate(periodicTask, 10, 30, TimeUnit.SECONDS);
         try {
-            ping();
-            runTables();
-            log.fine("Database iterated. Shutting executors.");
-            try {
-                executor.shutdown();
-                Integer timeout = cfg.getTimeoutMinutes();
-                if (!executor.awaitTermination(timeout, TimeUnit.MINUTES)) {
-                    log.warning("Executor shutdown timed out");
-                }
-            } catch (InterruptedException ie) {
-                log.warning("Executor shutdown interrupted");
-                // Preserve interrupt status
-                Thread.currentThread().interrupt();
-            }finally {
-                log.info("Shutting down NOW");
-                executor.shutdownNow();
-                executorMonitor.shutdownNow();
+            if (ping()) {
+                runTables();
+                var t1 = System.currentTimeMillis();
+                var t = (t1 - t0) / 1000.0D;
+                log.info("JDBC iteration took [%1$,.4f]s".formatted(t));
+            } else {
+                log.warning("Could not connect to JDBC Datasource");
             }
-            log.fine("Executed.");
         } catch (Exception e) {
-            log.info("Failed to anonymize");
+            log.warning("Failed to anonymize JDBC");
             log.throwing("Anonymouse", "run", e);
-            throw new RuntimeException(e);
         } finally {
-            var t1 = System.currentTimeMillis();
-            var t = (t1 - t0) / 1000.0D;
-            log.info("Database anonymized. Took [%1$,.4f]s".formatted(t));
+            log.fine("JDBC Iterator finished");
         }
     }
 
-    private void ping() throws SQLException {
+    private boolean ping() {
         try (var conn = getConnection();
-            var stmt = conn.createStatement()) {
+             var stmt = conn.createStatement()) {
             stmt.executeQuery("SELECT 1+1");
+            return true;
+        } catch (SQLException ex) {
+            return false;
         }
+    }
+
+    public void setReport(Report report) {
+        this.report = report;
     }
 }
