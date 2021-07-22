@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 import cloud.caravana.anonymouse.classifier.Classifiers;
-import cloud.caravana.anonymouse.classifier.NameClassifier;
+import cloud.caravana.anonymouse.classifier.NameListClassifier;
 import cloud.caravana.anonymouse.classifier.PhoneClassifier;
 
 import java.sql.SQLException;
@@ -128,7 +128,7 @@ public class AnonymouseTest {
         var sql = """
         SELECT * FROM CUSTOMER
         WHERE cus_name NOT LIKE '%s%%' 
-        """.formatted(NameClassifier.PREFIX);
+        """.formatted(NameListClassifier.PREFIX);
         return ! isEmpty(sql);
     }
 

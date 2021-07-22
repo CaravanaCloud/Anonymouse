@@ -3,8 +3,7 @@ package cloud.caravana.anonymouse.iter;
 import static java.lang.String.format;
 import static java.sql.ResultSet.CONCUR_UPDATABLE;
 import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
-import static java.sql.Types.DATE;
-import static java.sql.Types.VARCHAR;
+import static java.sql.Types.*;
 
 import cloud.caravana.anonymouse.Classification;
 import cloud.caravana.anonymouse.Configuration;
@@ -60,6 +59,9 @@ public class JDBCIterator implements Runnable {
             log.info(sql);
             try (var statement = conn
                     .createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_UPDATABLE);) {
+                if(cfg.getMaxRows() != null){
+                    statement.setMaxRows(cfg.getMaxRows());
+                }
                 var rows = statement.executeQuery(sql);
                 int concurrency = rows.getConcurrency();
                 if (concurrency != ResultSet.CONCUR_UPDATABLE) {
@@ -70,8 +72,12 @@ public class JDBCIterator implements Runnable {
                 var colCnt = rowsMD.getColumnCount();
                 while (rows.next()) {
                     rowCnt++;
+                    if (rowCnt > cfg.getMaxRows()){
+                        log.info("Reached max rows [%d] Table [%s]".formatted(rowCnt, table));
+                        break;
+                    }
                     if (rowCnt % cfg.getLogEach() == 0) {
-                        log.info("Row [%s] Table [%s] ".formatted(rowCnt, table));
+                        log.info("Row [%s] Table [%s]- ".formatted(rowCnt, table));
                     }
                     for (var col = 1; col <= colCnt; col++) {
                         int columnType = rowsMD.getColumnType(col);
@@ -87,8 +93,7 @@ public class JDBCIterator implements Runnable {
                         try {
                             rows.updateRow();
                         } catch (SQLException ex) {
-                            ex.printStackTrace();
-                            log.warning("Fail to update row  ");
+                            log.warning("Failed to update row [%d] of [%s]: %s".formatted(rowCnt, table.toString(),ex.getMessage()));
                         }
                     }
                 }
@@ -103,7 +108,7 @@ public class JDBCIterator implements Runnable {
         var endTime = LocalDateTime.now();
         report.jdbcResult().tableResult(
             table,
-            success,
+            success, false,
             errorMsg,
             rowCnt,
             startTime,
@@ -140,10 +145,11 @@ public class JDBCIterator implements Runnable {
         try {
             switch (columnType) {
                 case VARCHAR -> visitString(tableName, columnName, rowCnt, rows);
-                case DATE -> visitDate(tableName, columnName, rowCnt, rows);
-                default -> log.finest("Cant handle type for column %s.%s".formatted(
+                case TIMESTAMP, DATE -> visitDate(tableName, columnName, rowCnt, rows);
+                default -> log.finest("Cant handle type for column %s.%s [%d]".formatted(
                         tableName,
-                        columnName));
+                        columnName,
+                        columnType));
             }
         } catch (SQLException ex) {
             log.warning("Failed to update [" + tableName + "].[" + columnName + "] ");
@@ -157,13 +163,16 @@ public class JDBCIterator implements Runnable {
                            ResultSet rows) throws SQLException {
         var value = rows.getDate(columnName);
         if (value != null) {
-            var classification = classifiers.classify(value, tableName, columnName)
-                    .map(Classification::classifier);
-            if (classification.isPresent()) {
-                Classifier<Date> classifier = classification.get();
-                var utilDate = classifier.generateDate(value, row, columnName);
-                var sqlDate = new Date(utilDate.getTime());
-                rows.updateDate(columnName, sqlDate);
+            var classificationOpt = classifiers
+                    .classify(value, tableName, columnName);
+            if (classificationOpt.isPresent()) {
+                var classification = classificationOpt.get();
+                if (! classification.isSafe()){
+                    Classifier<Date> classifier = classification.classifier();
+                    var utilDate = classifier.generateDate(value, row, columnName);
+                    var sqlDate = new Date(utilDate.getTime());
+                    rows.updateDate(columnName, sqlDate);
+                }
             }
         }
     }
@@ -174,13 +183,15 @@ public class JDBCIterator implements Runnable {
                              ResultSet rows) throws SQLException {
         var columnValue = rows.getString(columnName);
         if (columnValue != null) {
-            var classification = classifiers.classify(columnValue, tableName, columnName)
-                    .map(Classification::classifier);
-            if (classification.isPresent()) {
-                Classifier<String> classifier = classification.get();
-                var newValue = classifier.generateString(columnValue, row, columnName);
-                if (!columnValue.equals(newValue)) {
-                    rows.updateString(columnName, newValue);
+            var classificationOpt = classifiers.classify(columnValue, tableName, columnName);
+            if (classificationOpt.isPresent()) {
+                Classification classification = classificationOpt.get();
+                if (! classification.isSafe()){
+                    Classifier<String> classifier = classification.classifier();
+                    var newValue = classifier.generateString(columnValue, row, columnName);
+                    if (!columnValue.equals(newValue)) {
+                        rows.updateString(columnName, newValue);
+                    }
                 }
             }
         }
@@ -261,8 +272,11 @@ public class JDBCIterator implements Runnable {
         try (var conn = getConnection();
              var stmt = conn.createStatement()) {
             stmt.executeQuery("SELECT 1+1");
+            log.info("JDBC ping success");
             return true;
         } catch (SQLException ex) {
+            log.info("JDBC ping failed");
+            ex.printStackTrace();
             return false;
         }
     }

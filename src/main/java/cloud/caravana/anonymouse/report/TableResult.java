@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public record TableResult(
     Table table,
     Boolean success,
+    Boolean truncated,
     String errorMessage,
     Long rowsRead,
     LocalDateTime readStartTime,

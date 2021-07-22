@@ -10,7 +10,7 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class Classifiers {
     @Inject
-    NameClassifier names;
+    NameListClassifier names;
     @Inject
     PhoneClassifier phones;
     @Inject

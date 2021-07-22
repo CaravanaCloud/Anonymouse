@@ -14,9 +14,10 @@ public record JDBCResult(
         return new JDBCResult(new HashMap<>());
     }
 
-    public void tableResult(Table table, boolean success, String errorMsg, Long rowCnt, LocalDateTime startTime, LocalDateTime endTime) {
+    public void tableResult(Table table, boolean success, boolean truncated, String errorMsg, Long rowCnt, LocalDateTime startTime, LocalDateTime endTime) {
         var tableResult = new TableResult(table,
                 success,
+                truncated,
                 errorMsg,
                 rowCnt,
                 startTime,

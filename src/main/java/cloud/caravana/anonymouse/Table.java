@@ -30,4 +30,11 @@ public record Table (
             rs.getString("REF_GENERATION"));
         return table;
     }
+
+    @Override
+    public String toString() {
+        return tableType + "{"
+                + tableCat + "." + tableName
+                +'}';
+    }
 }

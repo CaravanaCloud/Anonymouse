@@ -11,4 +11,8 @@ public record Classification(
     public static Classification of(PIIClass piiClass, Classifier classifier) {
         return new Classification(piiClass,classifier);
     }
+
+    public boolean isSafe() {
+        return  piiClass.isSafe();
+    }
 }

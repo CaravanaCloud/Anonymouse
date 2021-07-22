@@ -23,6 +23,7 @@ public class EmailClassifier extends Classifier<String>{
 
     @Override
     public String generateString(String columnValue, long index, String... context) {
+        var result = (String) null;
         var value = columnValue.toString();
         var split = value.split("@");
         if(split.length > 1) {
@@ -31,9 +32,10 @@ public class EmailClassifier extends Classifier<String>{
             var hash = hashids.encode(userHash);
             var domain = split[1];
             var gen =  hash + "@" + domain;
-            return gen;
-        }
-        return UUID.randomUUID() + "@anonymouse.id42.cc";
+            result = gen;
+        }else
+            result = hashids.encode(UUID.randomUUID().hashCode()) + "@anonym.cc";
+        return result;
     }
 
     @Override

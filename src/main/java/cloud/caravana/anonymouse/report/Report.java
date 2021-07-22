@@ -31,4 +31,5 @@ public class Report{
     public Long elapsedSecs(){
         return startTime.until( endTime, ChronoUnit.SECONDS );
     }
+
 }

@@ -1,9 +1,12 @@
 package cloud.caravana.anonymouse;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -12,12 +15,15 @@ import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
 import cloud.caravana.anonymouse.iter.JDBCIterator;
 import cloud.caravana.anonymouse.report.Report;
+import io.quarkus.runtime.StartupEvent;
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.hashids.Hashids;
 import org.yaml.snakeyaml.Yaml;
@@ -27,20 +33,98 @@ import org.yaml.snakeyaml.Yaml;
 public class Configuration {
     static final String userDir = System.getProperty("user.dir");
 
-    @ConfigProperty(name = "anonym.prefix", defaultValue= "|#|")
+    @Inject
+    Logger log;
+
+    @ConfigProperty(name = "anon.prefix", defaultValue= "|#|")
     String anonPrefix;
 
-    @ConfigProperty(name = "anonym.dryRun", defaultValue= "true")
-    Boolean dryRun;
+    @ConfigProperty(name = "anon.exitOnStop", defaultValue= "true")
+    boolean exitOnStop;
+
+    @ConfigProperty(name = "anon.dryRun", defaultValue= "true")
+    boolean dryRun;
+
+    @ConfigProperty(name = "anon.waitBeforeRun", defaultValue= "10")
+    long waitBeforeRun;
+
+    @ConfigProperty(name = "jdbc.maxRows", defaultValue = "")
+    Optional<Integer> maxRowsPerTable;
 
     @ConfigProperty(name = "jdbc.timeout_minutes", defaultValue= "5")
     Integer timeoutMinutes;
 
-    @ConfigProperty(name = "jdbc.log_each", defaultValue= "1000")
+    @ConfigProperty(name = "jdbc.log_each", defaultValue= "100000")
     Integer logEach;
 
     @ConfigProperty(name = "hashids.salt", defaultValue= "Anonymouse")
     String hashSalt;
+
+
+    Map<String, PIIClass> piiClasses = new HashMap<>();
+
+    public Configuration(){}
+
+    void onStart(@Observes StartupEvent ev) {
+        var profile = getActiveProfile();
+        var userDir = getUserDir();
+        var msg = new StringBuffer();
+        msg.append("Anonymouse ...\n");
+        msg.append("... PID [%d]\n".formatted(getPID()));
+        msg.append("... profile [%s]\n".formatted(profile));
+        msg.append("... userDir [%s]\n".formatted(userDir));
+        msg.append("... dryRun [%s]\n".formatted(isDryRun()));
+        msg.append("... jdbc max rows per table [%d]\n".formatted(getMaxRows()));
+        loadConfigFromFiles();
+        msg.append("... pii classes [%d]\n".formatted(piiClasses.size()));
+        log.info(msg.toString());
+    }
+
+    public Integer getMaxRows() {
+        return maxRowsPerTable.orElse(null);
+    }
+
+    private long getPID() {
+        return ProcessHandle.current().pid();
+    }
+
+    private void loadConfigFromFiles() {
+        Path anonPath = getAnymousePath();
+        loadConfig(anonPath);
+    }
+
+    public Path getAnymousePath() {
+        Path userPath = Path.of(userDir);
+        return userPath.resolve("anonymouse");
+    }
+
+    public Path getReportsPath(){
+        return getAnymousePath().resolve("report");
+    }
+
+    private void loadConfig(Path anonPath) {
+        File anonFile = anonPath.toFile();
+        if (! anonFile.exists()) return;
+        if (anonFile.isDirectory()){
+            log.info("Loading config from directory [%s]".formatted(anonFile));
+            try{
+                Files.walkFileTree(anonPath, new ConfigurationFileVisitor(this));
+            }catch (IOException e){
+                log.info("Failed to load [%s]".formatted(anonFile));
+                log.throwing("Configuraiton","loadConfig", e);
+            }
+        }
+    }
+
+    private String getActiveProfile() {
+        return ProfileManager.getActiveProfile();
+    }
+
+    @SuppressWarnings("all")
+    private static Optional<String> optEnv(String varName) {
+        Map<String, String> env = System.getenv();
+        return Optional.ofNullable(env.get(varName));
+    }
 
     public final String getAnonPrefix() {
         return anonPrefix;
@@ -54,8 +138,6 @@ public class Configuration {
     public String getUserDir(){
         return userDir;
     }
-
-    Map<String, PIIClass> piiClasses = new HashMap<>();
 
     @PostConstruct
     public void loadFromEnv(){
@@ -74,37 +156,22 @@ public class Configuration {
         return optEnv("ANONYM_CONFIG");
     }
 
-    @SuppressWarnings("all")
-    private static Optional<String> optEnv(String varName) {
-        Map<String, String> env = System.getenv();
-        return Optional.ofNullable(env.get(varName));
-    }
-
-
-
     @Produces
     public final ExecutorService getExecutorService(){
         return Executors.newWorkStealingPool();
     }
 
-    @Produces
-    public Logger getLogger() {
-        return Logger.getLogger("anonymouse");
-    }
-
     public final void add(final String url) {
         if (url == null) {
-            getLogger().warning("Cannot load null configuration URL");
+            log.warning("Cannot load null configuration URL");
             return;
         }
         addFromURL(url);
     }
 
-
-
     @SuppressWarnings("all")
-    private void addFromURL(final String url) {
-        getLogger().info("Loading configuration from [%s]".formatted(url));
+    public void addFromURL(final String url) {
+        log.info("Loading configuration from URL [%s]".formatted(url));
         String[] split = url.split(":");
         var protocol = split[0];
         switch (protocol){
@@ -113,16 +180,19 @@ public class Configuration {
         }
     }
 
-    private void addFromStream(String addr) {
+    public void addFromURL(URL url){
+        try (InputStream is = url.openStream()){
+            addFromInput(is);
+        }catch (IOException ex){
+            log.warning("Failed to read from url "+url);
+        }
+    }
+
+    public void addFromStream(String url) {
         try {
-            URL url = new URL(addr);
-            try (InputStream is = url.openStream()){
-                addFromInput(is);
-            }catch (IOException ex){
-                getLogger().warning("Failed to read from url "+addr);
-            }
+            addFromURL(new URL(url));
         }catch (MalformedURLException ex){
-            getLogger().warning("Failed to parse url "+addr);
+            log.warning("Failed to parse url "+url);
         }
     }
 
@@ -143,9 +213,12 @@ public class Configuration {
             var yaml = new Yaml();
             @SuppressWarnings("unchecked")
             var cfgMap = (Map<String, Object>) yaml.load(istream);
-            cfgMap.forEach(this::addRoot);
+            if (cfgMap != null)
+                cfgMap.forEach(this::addRoot);
+            else
+                log.warning("Null map loaded from yaml");
         } else {
-            getLogger().warning("Failed to load config");
+            log.warning("Failed to load config");
         }
     }
 
@@ -165,7 +238,7 @@ public class Configuration {
     private void addChild(final String key,
                           final String ckey,
                           final  String cvalue) {
-        PIIClass piiClass = PIIClass.valueOf(cvalue);
+        PIIClass piiClass = PIIClass.of(cvalue);
         String cname = cname(key,ckey);
         setPIIClass(piiClass, cname);
     }
@@ -215,5 +288,31 @@ public class Configuration {
 
     public Boolean isDryRun() {
         return dryRun;
+    }
+
+    public boolean isExitOnStop() {
+        return exitOnStop;
+    }
+
+    public void beforeRunWait() {
+        try {
+            log.info("Waiting [%d]s".formatted(waitBeforeRun));
+            Thread.sleep(waitBeforeRun * 1000L);
+        } catch (InterruptedException e) {
+            log.throwing("Configuration", "beforeRunWait", e);
+        }
+    }
+
+    public void addFromPath(Path file) {
+        try {
+            addFromURL(file.toUri().toURL());
+        } catch (MalformedURLException e) {
+            log.warning(e.getMessage());
+            log.throwing("Configuration","addFromPath",e);
+        }
+    }
+
+    public File getReportOutDir() {
+        return getReportsPath().toFile();
     }
 }

@@ -33,17 +33,14 @@ public class Main implements QuarkusApplication {
         Quarkus.run(Main.class, args);
     }
 
-    void onStart(@Observes StartupEvent ev) {
-        var profile = ProfileManager.getActiveProfile();
-        var userDir = System.getProperty("user.dir");
-        log.info("Anonymouse starting...");
-        log.info("... profile [%s]".formatted(profile));
-        log.info("... userDir [%s]".formatted(userDir));
-        log.info("... dryRun [%s]".formatted(cfg.isDryRun()));
-    }
 
     void onStop(@Observes ShutdownEvent ev) {
-        log.info("The application is stopping...");
-        //System.exit(0);
+        if(cfg.isExitOnStop()){
+            log.info("Anonymouse exited");
+            Quarkus.waitForExit();
+            System.exit(0);
+        }else {
+            log.info("Anonymouse stopped");
+        }
     }
 }

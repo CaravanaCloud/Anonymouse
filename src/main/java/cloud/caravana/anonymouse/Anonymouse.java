@@ -26,6 +26,7 @@ public class Anonymouse {
     public final void run() {
         var report = Report.of();
         report.startNow();
+        cfg.beforeRunWait();
         if (jdbcIterator.isResolvable()){
             cfg.onJDBCReady(jdbcIterator.get(), report);
         }
@@ -35,5 +36,7 @@ public class Anonymouse {
         report.endNow();
         log.info(report.toString());
         log.info("Elased seconds [%d]".formatted(report.elapsedSecs()));
+
+        log.info("Over and out.");
     }
 }
