@@ -45,7 +45,7 @@ public class Configuration {
     @ConfigProperty(name = "anon.dryRun", defaultValue= "true")
     boolean dryRun;
 
-    @ConfigProperty(name = "anon.waitBeforeRun", defaultValue= "10")
+    @ConfigProperty(name = "anon.waitBeforeRun", defaultValue= "2")
     long waitBeforeRun;
 
     @ConfigProperty(name = "jdbc.maxRows", defaultValue = "")
@@ -59,6 +59,9 @@ public class Configuration {
 
     @ConfigProperty(name = "hashids.salt", defaultValue= "Anonymouse")
     String hashSalt;
+
+    @ConfigProperty(name = "quarkus.datasource.db-kind")
+    String dbKind;
 
 
     Map<String, PIIClass> piiClasses = new HashMap<>();
@@ -74,6 +77,7 @@ public class Configuration {
         msg.append("... profile [%s]\n".formatted(profile));
         msg.append("... userDir [%s]\n".formatted(userDir));
         msg.append("... dryRun [%s]\n".formatted(isDryRun()));
+        msg.append("... dbKind [%s]\n".formatted(getDbKind()));
         msg.append("... jdbc max rows per table [%d]\n".formatted(getMaxRows()));
         loadConfigFromFiles();
         msg.append("... pii classes [%d]\n".formatted(piiClasses.size()));
@@ -224,7 +228,7 @@ public class Configuration {
 
     private void addRoot(final String key, final Object value) {
         if (value instanceof String) {
-            PIIClass piiClass = PIIClass.valueOf((String) value);
+            PIIClass piiClass = PIIClass.of((String) value);
             setPIIClass(piiClass, key);
         }
         if (value instanceof Map) {
@@ -245,7 +249,8 @@ public class Configuration {
 
     private void setPIIClass(final PIIClass piiClass,
                              final String cname) {
-        piiClasses.put(cname.toUpperCase(), piiClass);
+        var cuname = cname.toUpperCase();
+        piiClasses.put(cuname, piiClass);
     }
 
     public final PIIClass getPIIClass(String... context) {
@@ -314,5 +319,23 @@ public class Configuration {
 
     public File getReportOutDir() {
         return getReportsPath().toFile();
+    }
+
+    public void declare(String cname, String piiClass) {
+        setPIIClass(PIIClass.of(piiClass), cname);
+    }
+
+    public boolean isAboveMaxRows(long rowCnt) {
+        if (maxRowsPerTable.isPresent()){
+            return rowCnt > getMaxRows();
+        }else return false;
+    }
+
+    public void wetRun() {
+        dryRun = false;
+    }
+
+    public String getDbKind() {
+        return dbKind;
     }
 }

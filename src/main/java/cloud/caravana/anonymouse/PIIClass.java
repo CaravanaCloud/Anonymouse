@@ -5,22 +5,22 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 public enum PIIClass {
-    DateTime,
-    Telephone,
-    FullName,
-    Email,
     CPF,
-    Hashid,
-    Safe,
+    DateTime,
+    Email,
     Erase,
-    Truncate,
-    OtherPII;
+    FullName,
+    Hashid,
+    OtherPII,
+    Safe,
+    Telephone,
+    Truncate;
 
 
     public static PIIClass of(String cvalue) {
         try {
             return PIIClass.valueOf(cvalue);
-        }catch (IllegalArgumentException ex){
+        } catch (IllegalArgumentException ex) {
             Logger.getLogger("PIIClass").warning("Could not find class [%s]".formatted(cvalue));
         }
         return OtherPII;

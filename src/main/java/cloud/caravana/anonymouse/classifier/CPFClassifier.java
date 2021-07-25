@@ -1,6 +1,7 @@
 package cloud.caravana.anonymouse.classifier;
 
 import cloud.caravana.anonymouse.Classification;
+import cloud.caravana.anonymouse.util.Wordlists;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.*;
@@ -13,30 +14,10 @@ import static cloud.caravana.anonymouse.PIIClass.CPF;
 public class CPFClassifier extends Classifier<String> {
     Logger log = Logger.getLogger("CPFClassifier");
 
-    LinkedList allowCPFs;
-    LinkedList stockCPFs;
-    Map<String,String> kmap;
-
-
-    public CPFClassifier() {
-        loadAcceptList();
-        log.info("%d CPFs allowed".formatted(allowCPFs.size()));
+    public static boolean isPIICPF(String cpf) {
+        return ! Wordlists.isAnonymCPF(cpf);
     }
 
-    private void loadAcceptList() {
-        allowCPFs = new LinkedList();
-        try (var in = getClass().getResourceAsStream("/accept_cpf_sorted.txt");
-             var buf = new BufferedReader(new InputStreamReader(in))) {
-            String line = null;
-            while ((line = buf.readLine()) != null) {
-                allowCPFs.add(line);
-            }
-            stockCPFs = (LinkedList) allowCPFs.clone();
-            kmap = new HashMap<>();
-        } catch (IOException ex) {
-            log.warning("Failed to load CPF accept list");
-        }
-    }
 
     @Override
     public Optional<Classification> classify(String value,
@@ -46,16 +27,12 @@ public class CPFClassifier extends Classifier<String> {
 
     @Override
     public String generateString(String columnValue, long index, String... context) {
-        if (! kmap.containsKey(columnValue)) {
-            var next = (String) stockCPFs.pop();
-            kmap.put(columnValue,next);
-        }
-        return kmap.get(columnValue);
+        return Wordlists.randomAnonymCPF();
     }
 
     @Override
     protected boolean isAnonymized(String value) {
-        return allowCPFs.contains(value);
+        return ! isPIICPF(value);
     }
 
     public static void main(String[] args) {

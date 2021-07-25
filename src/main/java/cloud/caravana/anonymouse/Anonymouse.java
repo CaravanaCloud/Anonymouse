@@ -23,7 +23,12 @@ public class Anonymouse {
     @Inject
     Configuration cfg;
 
-    public final void run() {
+    public final void doRun(){
+        cfg.wetRun();
+        safeRun();
+    }
+
+    public final void safeRun() {
         var report = Report.of();
         report.startNow();
         cfg.beforeRunWait();
@@ -38,5 +43,9 @@ public class Anonymouse {
         log.info("Elased seconds [%d]".formatted(report.elapsedSecs()));
 
         log.info("Over and out.");
+    }
+
+    public void declare(String context, String piiclass) {
+        cfg.declare(context, piiclass);
     }
 }

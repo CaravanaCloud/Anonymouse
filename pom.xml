@@ -14,12 +14,11 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <quarkus.package.type>uber-jar</quarkus.package.type>
     <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
-    <skipTests>true</skipTests>
 
     <java.version>16</java.version>
     <maven.compiler.source>16</maven.compiler.source>
     <maven.compiler.target>16</maven.compiler.target>
-    <quarkus.platform.version>2.0.2.Final</quarkus.platform.version>
+    <quarkus.platform.version>2.0.3.Final</quarkus.platform.version>
     <quarkus-plugin.version>${quarkus.platform.version}</quarkus-plugin.version>
     <awssdk.version>2.16.78</awssdk.version>
     <hashid.version>1.0.3</hashid.version>
@@ -132,6 +131,20 @@
       <artifactId>quarkus-qute</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-flyway</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-orm-rest-data-panache</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-narayana-jta</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
@@ -247,6 +260,14 @@
           <compilerArgs>--enable-preview</compilerArgs>
         </configuration>
       </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <source>16</source>
+                <target>16</target>
+            </configuration>
+        </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>

@@ -4,6 +4,7 @@ import static cloud.caravana.anonymouse.PIIClass.FullName;
 
 import cloud.caravana.anonymouse.Classification;
 import cloud.caravana.anonymouse.util.Utils;
+import cloud.caravana.anonymouse.util.Wordlists;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -22,7 +23,7 @@ public class NameListClassifier extends Classifier<String> {
     @Override
     public String generateString(String columnValue, long index, String... context) {
         try {
-            return Utils.randomAnonymFullName();
+            return Wordlists.randomAnonymFullName();
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -32,7 +33,7 @@ public class NameListClassifier extends Classifier<String> {
     @Override
     protected boolean isAnonymized(String value) {
         try {
-            return Utils.isAnonymFullName(value);
+            return Wordlists.isAnonymFullName(value);
         } catch (IOException e) {
             e.printStackTrace();
             return false;

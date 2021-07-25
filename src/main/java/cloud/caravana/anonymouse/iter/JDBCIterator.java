@@ -4,6 +4,7 @@ import static java.lang.String.format;
 import static java.sql.ResultSet.CONCUR_UPDATABLE;
 import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
 import static java.sql.Types.*;
+import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
 
 import cloud.caravana.anonymouse.Classification;
 import cloud.caravana.anonymouse.Configuration;
@@ -15,13 +16,13 @@ import cloud.caravana.anonymouse.report.Report;
 
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import javax.transaction.Transactional;
 
 @SuppressWarnings("CdiUnproxyableBeanTypesInspection")
 @ApplicationScoped
@@ -44,65 +45,42 @@ public class JDBCIterator implements Runnable {
 
     private Report report;
 
+
     public void runTable(Table table) {
         var rowCnt = 0L;
         var startTime = LocalDateTime.now();
         var success = true;
         var errorMsg = "";
         try (var conn = getConnection()) {
-            conn.setAutoCommit(true);
-            var tableCat = table.tableCat();
-            var tableName = table.tableName();
-            var tableFQN = "%s.%s".formatted(tableCat, tableName);
-            log.info("Anonymizing [%s]".formatted(table.toString()));
-            var sql = "SELECT * FROM " + tableFQN;
-            log.info(sql);
+            var sql = writeSelectFrom(table);
             try (var statement = conn
                     .createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_UPDATABLE);) {
                 if(cfg.getMaxRows() != null){
                     statement.setMaxRows(cfg.getMaxRows());
                 }
-                var rows = statement.executeQuery(sql);
-                int concurrency = rows.getConcurrency();
-                if (concurrency != ResultSet.CONCUR_UPDATABLE) {
-                    log.warning("Skipping not updatable table %s".formatted(table));
-                    return;
-                }
-                var rowsMD = rows.getMetaData();
-                var colCnt = rowsMD.getColumnCount();
-                while (rows.next()) {
-                    rowCnt++;
-                    if (rowCnt > cfg.getMaxRows()){
-                        log.info("Reached max rows [%d] Table [%s]".formatted(rowCnt, table));
-                        break;
+                log.info("Executing query [%s]".formatted(sql));
+
+                try(var rows = statement.executeQuery(sql)) {
+                    int concurrency = rows.getConcurrency();
+                    if (concurrency != ResultSet.CONCUR_UPDATABLE) {
+                        log.warning("Skipping not updatable table %s".formatted(table));
+                        return;
                     }
-                    if (rowCnt % cfg.getLogEach() == 0) {
-                        log.info("Row [%s] Table [%s]- ".formatted(rowCnt, table));
+                    var rowsMD = rows.getMetaData();
+                    var colCnt = rowsMD.getColumnCount();
+                    while (rows.next()) {
+                        rowCnt++;
+                        if (visitRow(conn, table, rowCnt, rows, rowsMD, colCnt)) break;
                     }
-                    for (var col = 1; col <= colCnt; col++) {
-                        int columnType = rowsMD.getColumnType(col);
-                        var columnName = rowsMD.getColumnName(col);
-                        try {
-                            visitCell(rowCnt, tableName, rows, col, columnType, columnName);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            log.warning("Fail to visit cell ");
-                        }
-                    }
-                    if (!cfg.isDryRun()) {
-                        try {
-                            rows.updateRow();
-                        } catch (SQLException ex) {
-                            log.warning("Failed to update row [%d] of [%s]: %s".formatted(rowCnt, table.toString(),ex.getMessage()));
-                        }
-                    }
+                }catch (SQLException ex){
+                    log.warning("Failed to iterate %s".formatted(table));
                 }
             }
         } catch (SQLException ex) {
             success = false;
             errorMsg = ex.getMessage();
             ex.printStackTrace();
-            log.warning("Failed to anonymize %s".formatted(table));
+            log.warning("Failed to connect %s".formatted(table));
             log.throwing("JDBCIterator", "runTable", ex);
         }
         var endTime = LocalDateTime.now();
@@ -115,6 +93,52 @@ public class JDBCIterator implements Runnable {
             endTime
         );
         log.info("Anonymized [%s]rows of [%s]".formatted(rowCnt, table.toString()));
+    }
+
+    private String writeSelectFrom(Table table) {
+        var dbKind = cfg.getDbKind();
+        var sql = (String) null;
+        var tableName = table.tableName();
+        if ("h2".equals(dbKind)){
+            sql = "SELECT * FROM " + tableName;
+        }else{
+            var tableCat = table.tableCat();
+            var tableFQN = "%s.%s".formatted(tableCat, tableName);
+            sql = "SELECT * FROM " + tableFQN;
+        }
+        return sql;
+    }
+
+    private boolean visitRow(Connection conn, Table table,
+                             long rowCnt,
+                             ResultSet rows,
+                             ResultSetMetaData rowsMD,
+                             int colCnt) throws SQLException {
+        if (cfg.isAboveMaxRows(rowCnt)){
+            log.info("Reached max rows [%d] Table [%s]".formatted(rowCnt, table));
+            return true;
+        }
+        if (rowCnt % cfg.getLogEach() == 0) {
+            log.info("Row [%s] Table [%s]- ".formatted(rowCnt, table));
+        }
+        for (var col = 1; col <= colCnt; col++) {
+            int columnType = rowsMD.getColumnType(col);
+            var columnName = rowsMD.getColumnName(col);
+            try {
+                visitCell(rowCnt, table.tableName(), rows, col, columnType, columnName);
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.warning("Fail to visit cell ");
+            }
+        }
+        if (!cfg.isDryRun()) {
+            try {
+                rows.updateRow();
+            } catch (SQLException ex) {
+                log.warning("Failed to update row [%d] of [%s]: %s".formatted(rowCnt, table.toString(),ex.getMessage()));
+            }
+        }
+        return false;
     }
 
     private Connection tryInjected(){
@@ -134,6 +158,7 @@ public class JDBCIterator implements Runnable {
     private Connection getConnection() throws SQLException {
         Connection conn = tryInjected();
         if (conn != null) {
+            conn.setAutoCommit(true);
             return conn;
         } else {
             log.warning("Can't resolve database to connect.");
@@ -261,7 +286,8 @@ public class JDBCIterator implements Runnable {
                 log.warning("Could not connect to JDBC Datasource");
             }
         } catch (Exception e) {
-            log.warning("Failed to anonymize JDBC");
+            log.warning("Failed to anonymize JDBC " + e.getMessage());
+            e.printStackTrace();
             log.throwing("Anonymouse", "run", e);
         } finally {
             log.fine("JDBC Iterator finished");

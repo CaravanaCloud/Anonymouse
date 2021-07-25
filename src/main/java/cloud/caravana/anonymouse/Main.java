@@ -4,12 +4,10 @@ package cloud.caravana.anonymouse;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.ShutdownEvent;
-import io.quarkus.runtime.StartupEvent;
 import io.quarkus.runtime.annotations.QuarkusMain;
 import java.util.logging.Logger;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import io.quarkus.runtime.configuration.ProfileManager;
 
 @SuppressWarnings("CdiUnproxyableBeanTypesInspection")
 @QuarkusMain
@@ -25,7 +23,7 @@ public class Main implements QuarkusApplication {
 
     @Override
     public int run(String... args) throws Exception {
-        anonymouse.run();
+        anonymouse.safeRun();
         return 0;
     }
 
